@@ -1,0 +1,16 @@
+.TH SDHCP 1
+.SH NAME
+sdhcp \- a simple dhcp client
+.SH SYNOPSIS
+.B sdhcp
+.RB [interface]
+.SH DESCRIPTION
+sdchp is a simple, tiny dhcp client. It runs until it enters the "Bound"
+state, then forks to the background and runs as a daemon to keep
+the lease alive.
+.SH BUGS
+I'm sure there's plenty. It only currently supports a small subset of
+dhcp options, and has been untested on larger networks. It ignores most of
+the dchp options it understands. Send bug reports to me!
+.SH AUTHOR
+David Galos (galosd83 (at) students.rowan.edu)
