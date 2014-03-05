@@ -4,7 +4,7 @@
 #include<net/if.h>
 #include<net/route.h>
 #include<signal.h>
-#include<sys/poll.h>
+#include<poll.h>
 #include<errno.h>
 #include<fcntl.h>
 #include<stdio.h>
@@ -434,4 +434,3 @@ main(int argc, char *argv[])
 	run();
 	return 0;
 }
-
