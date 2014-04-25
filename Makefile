@@ -1,17 +1,64 @@
-DESTDIR=
-MANDIR = /usr/share/man
+include config.mk
 
-sdhcp: sdhcp.c
-	$(CC) -O2 -o $@ sdhcp.c -static -Wall -ansi
+.POSIX:
+.SUFFIXES: .c .o
 
-debug: sdhcp.c debug.c
-	$(CC) -DDEBUG -o sdhcp sdhcp.c -static -O0 -g -Wall -ansi
+HDR = util.h
+LIB = \
+	  util/strlcpy.o
 
-all: sdhcp
+SRC = sdhcp.c
+
+OBJ = $(SRC:.c=.o) $(LIB)
+BIN = $(SRC:.c=)
+MAN = $(SRC:.c=.8)
+
+all: options binlib
+
+options:
+	@echo sdhcp build options:
+	@echo "CFLAGS   = ${CFLAGS}"
+	@echo "LDFLAGS  = ${LDFLAGS}"
+	@echo "CC       = ${CC}"
+
+binlib: util.a
+	$(MAKE) bin
+
+bin: $(BIN)
+
+$(OBJ): $(HDR) config.mk
+
+.o:
+	@echo LD $@
+	@$(LD) -o $@ $< util.a $(LDFLAGS)
+
+.c.o:
+	@echo CC $<
+	@$(CC) -c -o $@ $< $(CFLAGS)
+
+util.a: $(LIB)
+	@echo AR $@
+	@$(AR) -r -c $@ $(LIB)
+	@ranlib $@
 
 install: all
-	install -s sdhcp $(DESTDIR)/sbin
-	gzip -c sdhcp.8 > $(DESTDIR)$(MANDIR)/man8/sdhcp.8.gz
-	
+	@echo installing executables to $(DESTDIR)$(PREFIX)/sbin
+	@mkdir -p $(DESTDIR)$(PREFIX)/sbin
+	@cp -f $(BIN) $(DESTDIR)$(PREFIX)/sbin
+	@cd $(DESTDIR)$(PREFIX)/sbin && chmod 755 $(BIN)
+	@echo installing manual pages to $(DESTDIR)$(MANPREFIX)/man8
+	@mkdir -p $(DESTDIR)$(MANPREFIX)/man8
+	@for m in $(MAN); do sed "s/VERSION/$(VERSION)/g" < "$$m" > $(DESTDIR)$(MANPREFIX)/man8/"$$m"; done
+	@cd $(DESTDIR)$(MANPREFIX)/man8 && chmod 644 $(MAN)
+
+uninstall:
+	@echo removing executables from $(DESTDIR)$(PREFIX)/bin
+	@cd $(DESTDIR)$(PREFIX)/bin && rm -f $(BIN)
+	@echo removing manual pages from $(DESTDIR)$(MANPREFIX)/man8
+	@cd $(DESTDIR)$(MANPREFIX)/man8 && rm -f $(MAN)
+
 clean:
-	rm -f sdhcp ?*~
+	@echo cleaning
+	@rm -f $(BIN) $(OBJ)
+
+.PHONY: all options clean install uninstall
