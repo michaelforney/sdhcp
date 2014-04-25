@@ -1,6 +1,7 @@
 TODO:
 	[ ] manual check memcpy bounds.
-	[ ] add new options to man page.
+	[ ] sane default value for client-id and test it.
+	[ ] add new options to man page (-d, -i, -c).
 	[ ] update LICENSE.
 	[ ] replace unsigned char ip[4] and so on from function declarations.
 	[?] ipv6 support ?
@@ -12,6 +13,7 @@ Changed (for now):
 		- remove debug (dbgprintf()) code in sdhcp.c.
 		- code compiles more cleanly (ansi and c99),
 		  -D_BSD_SOURCE added and explicitly added missing headers (time.h and unistd.h).
+		- moved man page from sdhcp.8 to sdhcp.1
 	- typos:
 		- sdhcp.c: inferface typo.
 		- sdhcp.1: shdcp typo.
