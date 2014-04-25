@@ -1,19 +1,27 @@
 TODO:
 	[ ] manual check memcpy bounds.
-	[ ] compile with stricter options, ansi and/or c99, -Wall.
-	[ ] fix code style, trailing whitespace.
-	[ ] add and use strlcpy.
-	[ ] dont overflow ifname (strcpy -> strlcpy).
-	[ ] configurable (command-line?) client-id, atm hardcoded to vaio, test this.
 	[?] ipv6 support ?
-	[?] use arg.h ?
-	[ ] replace write(, len) in some cases with [f]printf()
 
-changed:
-	- code style
-	- trailing whitespace and use tabs
-	- remove dbgprintf() code in sdhcp.c
-	- sdhcp.c: inferface typo
-	- sdhcp.8: shdcp typo
-	- make exit(n), EXIT_SUCCESS or EXIT_FAILURE
-	- makefile: man page install should respect $DESTDIR
+Changed (for now):
+	- cleanup
+		- code style.
+		- trailing whitespace and use tabs.
+		- remove debug (dbgprintf()) code in sdhcp.c.
+		- code compiles more cleanly (ansi and c99),
+		  -D_BSD_SOURCE added and explicitly added missing headers (time.h and unistd.h).
+	- typos:
+		- sdhcp.c: inferface typo.
+		- sdhcp.1: shdcp typo.
+	- make exit([01]), EXIT_SUCCESS or EXIT_FAILURE.
+	- replace write() for stdout messages with fprintf()
+	- replace die() with eprintf().
+	- makefile:
+		- man page install should respect $DESTDIR.
+		- make sure on install /sbin and mandir exists.
+		- add config.mk, and follow suckless Makefile style.
+	- add arg.h
+		- first parameter remaings interface.
+		- add -d flag, update /etc/resolv.conf (default changed to no).
+		- add -c flag, set client id, used to be hardcoded to "vaio".
+		  this can also be specified as a second parameter.
+		- add -i flag, set interface name.
