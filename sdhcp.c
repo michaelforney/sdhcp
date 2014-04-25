@@ -464,7 +464,7 @@ main(int argc, char *argv[])
 	ioctl(sock, SIOCGIFHWADDR, &ifreq);
 	memcpy(hwaddr, ifreq.ifr_hwaddr.sa_data, sizeof ifreq.ifr_hwaddr.sa_data);
 
-	if((rnd = open("/dev/urandom", O_RDONLY) == -1))
+	if((rnd = open("/dev/urandom", O_RDONLY)) == -1)
 		eprintf("can't open /dev/urandom to generate unique transaction identifier:");
 	read(rnd, xid, sizeof xid);
 	close(rnd);
