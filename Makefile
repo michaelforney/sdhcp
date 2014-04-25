@@ -11,7 +11,7 @@ SRC = sdhcp.c
 
 OBJ = $(SRC:.c=.o) $(LIB)
 BIN = $(SRC:.c=)
-MAN = $(SRC:.c=.8)
+MAN = $(SRC:.c=.1)
 
 all: options binlib
 
@@ -46,16 +46,16 @@ install: all
 	@mkdir -p $(DESTDIR)$(PREFIX)/sbin
 	@cp -f $(BIN) $(DESTDIR)$(PREFIX)/sbin
 	@cd $(DESTDIR)$(PREFIX)/sbin && chmod 755 $(BIN)
-	@echo installing manual pages to $(DESTDIR)$(MANPREFIX)/man8
-	@mkdir -p $(DESTDIR)$(MANPREFIX)/man8
-	@for m in $(MAN); do sed "s/VERSION/$(VERSION)/g" < "$$m" > $(DESTDIR)$(MANPREFIX)/man8/"$$m"; done
-	@cd $(DESTDIR)$(MANPREFIX)/man8 && chmod 644 $(MAN)
+	@echo installing manual pages to $(DESTDIR)$(MANPREFIX)/man1
+	@mkdir -p $(DESTDIR)$(MANPREFIX)/man1
+	@for m in $(MAN); do sed "s/VERSION/$(VERSION)/g" < "$$m" > $(DESTDIR)$(MANPREFIX)/man1/"$$m"; done
+	@cd $(DESTDIR)$(MANPREFIX)/man1 && chmod 644 $(MAN)
 
 uninstall:
-	@echo removing executables from $(DESTDIR)$(PREFIX)/bin
-	@cd $(DESTDIR)$(PREFIX)/bin && rm -f $(BIN)
-	@echo removing manual pages from $(DESTDIR)$(MANPREFIX)/man8
-	@cd $(DESTDIR)$(MANPREFIX)/man8 && rm -f $(MAN)
+	@echo removing executables from $(DESTDIR)$(PREFIX)/sbin
+	@cd $(DESTDIR)$(PREFIX)/sbin && rm -f $(BIN)
+	@echo removing manual pages from $(DESTDIR)$(MANPREFIX)/man1
+	@cd $(DESTDIR)$(MANPREFIX)/man1 && rm -f $(MAN)
 
 clean:
 	@echo cleaning
