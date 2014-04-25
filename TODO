@@ -1,5 +1,8 @@
 TODO:
 	[ ] manual check memcpy bounds.
+	[ ] add flag (-e?) to call a script with vars set (setenv()), not call setip().
+	[ ] add flag (-s?) to probe a specific DHCP server, not broadcast?
+	    probably skip in run() Init: etc stages.
 	[ ] sane default value for client-id and test it.
 	[ ] add new options to man page (-d, -i, -c).
 	[ ] update LICENSE.
