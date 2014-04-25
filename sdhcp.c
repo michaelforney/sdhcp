@@ -321,6 +321,8 @@ acceptlease(void)
 	if(dflag == 1)
 		setdns(dns);
 	if(*program) {
+		snprintf(buf, sizeof(buf), "%d.%d.%d.%d", server[0], server[1], server[2], server[3]);
+		setenv("SERVER", buf, 1);
 		snprintf(buf, sizeof(buf), "%d.%d.%d.%d", client[0], client[1], client[2], client[3]);
 		setenv("CLIENT", buf, 1);
 		snprintf(buf, sizeof(buf), "%d.%d.%d.%d", mask[0], mask[1], mask[2], mask[3]);
