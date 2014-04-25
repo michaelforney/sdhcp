@@ -95,8 +95,8 @@ static unsigned char router[4];
 static unsigned char dns[4];
 static unsigned long t1;
 
-static int dflag = 0; /* set DNS: change /etc/resolv.conf ? */
-static int iflag = 0;
+static int dflag = 1; /* change DNS in /etc/resolv.conf ? */
+static int iflag = 1; /* set IP ? */
 
 #define IP(a,b,c,d) (unsigned char[4]){a,b,c,d}
 
@@ -315,7 +315,8 @@ static void
 acceptlease(void)
 {
 	char buf[128];
-	if(iflag)
+
+	if(iflag == 1)
 		setip(client, mask, router);
 	if(dflag == 1)
 		setdns(dns);
@@ -444,11 +445,11 @@ main(int argc, char *argv[])
 	case 'e': /* run program */
 		program = EARGF(usage());
 		break;
-	case 'i': /* set ip */
-		iflag = 1;
+	case 'i': /* don't set ip */
+		iflag = 0;
 		break;
-	case 'd': /* DNS: update /etc/resolv.conf */
-		dflag = 1;
+	case 'd': /* don't update DNS in/etc/resolv.conf */
+		dflag = 0;
 		break;
 	default:
 		usage();
