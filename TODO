@@ -1,5 +1,8 @@
 TODO:
 	[ ] manual check memcpy bounds.
+	[ ] add new options to man page.
+	[ ] update LICENSE.
+	[ ] replace unsigned char ip[4] and so on from function declarations.
 	[?] ipv6 support ?
 
 Changed (for now):
