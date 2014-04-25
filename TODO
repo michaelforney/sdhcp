@@ -1,0 +1,19 @@
+TODO:
+	[ ] manual check memcpy bounds.
+	[ ] compile with stricter options, ansi and/or c99, -Wall.
+	[ ] fix code style, trailing whitespace.
+	[ ] add and use strlcpy.
+	[ ] dont overflow ifname (strcpy -> strlcpy).
+	[ ] configurable (command-line?) client-id, atm hardcoded to vaio, test this.
+	[?] ipv6 support ?
+	[?] use arg.h ?
+	[ ] replace write(, len) in some cases with [f]printf()
+
+changed:
+	- code style
+	- trailing whitespace and use tabs
+	- remove dbgprintf() code in sdhcp.c
+	- sdhcp.c: inferface typo
+	- sdhcp.8: shdcp typo
+	- make exit(n), EXIT_SUCCESS or EXIT_FAILURE
+	- makefile: man page install should respect $DESTDIR
