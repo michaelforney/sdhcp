@@ -48,7 +48,7 @@ enum {
 	Bootrequest =        1,
 	Bootreply =          2,
 	/* bootp flags */
-	Fbroadcast =     1<<15,
+	Fbroadcast =   1 << 15,
 
 	OBpad =              0,
 	OBmask =             1,
@@ -56,18 +56,18 @@ enum {
 	OBnameserver =       5,
 	OBdnsserver =        6,
 	OBbaddr =           28,
-	ODipaddr =          50,  /* 0x32 */
+	ODipaddr =          50, /* 0x32 */
 	ODlease =           51,
 	ODoverload =        52,
-	ODtype =            53,  /* 0x35 */
-	ODserverid =        54,  /* 0x36 */
-	ODparams =          55,  /* 0x37 */
+	ODtype =            53, /* 0x35 */
+	ODserverid =        54, /* 0x36 */
+	ODparams =          55, /* 0x37 */
 	ODmessage =         56,
 	ODmaxmsg =          57,
 	ODrenewaltime =     58,
 	ODrebindingtime =   59,
 	ODvendorclass =     60,
-	ODclientid =        61,  /* 0x3d */
+	ODclientid =        61, /* 0x3d */
 	ODtftpserver =      66,
 	ODbootfile =        67,
 	OBend =            255,
@@ -79,20 +79,19 @@ Bootp bp;
 unsigned char magic[] = {99, 130, 83, 99};
 
 /* conf */
-unsigned char xid[sizeof bp.xid];
-unsigned char hwaddr[16];
-time_t starttime;
-char *ifname = "eth0";
-char *cid = "vaio.12340";
-int sock;
+static unsigned char xid[sizeof bp.xid];
+static unsigned char hwaddr[16];
+static time_t starttime;
+static char *ifname = "eth0";
+static char *cid = "vaio.12340";
+static int sock;
 /* sav */
-unsigned char server[4];
-unsigned char client[4];
-unsigned char mask[4];
-unsigned char router[4];
-unsigned char dns[4];
-unsigned long t1;
-unsigned long t2;
+static unsigned char server[4];
+static unsigned char client[4];
+static unsigned char mask[4];
+static unsigned char router[4];
+static unsigned char dns[4];
+static unsigned long t1;
 
 #define IP(...) (unsigned char[4]){__VA_ARGS__}
 
@@ -443,12 +442,12 @@ main(int argc, char *argv[])
 
 	if((sock = socket(AF_INET, SOCK_DGRAM, 0)) == -1)
 		die("socket");
-	if(setsockopt(sock, SOL_SOCKET, SO_BROADCAST, &bcast, sizeof bcast)==-1)
+	if(setsockopt(sock, SOL_SOCKET, SO_BROADCAST, &bcast, sizeof bcast) == -1)
 		die("setsockopt");
 
 	strcpy(ifreq.ifr_name, ifname); /* TODO: strlcpy */
 	ioctl(sock, SIOCGIFINDEX, &ifreq);
-	if(setsockopt(sock, SOL_SOCKET, SO_BINDTODEVICE, &ifreq, sizeof ifreq)==-1)
+	if(setsockopt(sock, SOL_SOCKET, SO_BINDTODEVICE, &ifreq, sizeof ifreq) == -1)
 		die("setsockopt");
 	addr = iptoaddr(IP(255,255,255,255), 68);
 	if(bind(sock, (void*)&addr, sizeof addr)!=0)
