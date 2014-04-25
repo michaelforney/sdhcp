@@ -122,16 +122,29 @@ iptoaddr(unsigned char ip[4], int port)
 	return *(struct sockaddr*)&ifaddr;
 }
 
-#define UDPWRAPPER(name, func, port, hack) \
-static int name(unsigned char ip[4], int fd, void *data, size_t n){\
-	struct sockaddr addr = iptoaddr(ip, port);\
-	int x, y = sizeof addr;\
-	if((x=func(fd, data, n, 0, &addr, hack y))==-1)\
-		die(#func);\
-	return x;\
+/* sendto UDP wrapper */
+static ssize_t
+udpsend(unsigned char ip[4], int fd, void *data, size_t n) {
+	struct sockaddr addr = iptoaddr(ip, 67);
+	socklen_t addrlen = sizeof addr;
+	ssize_t sent;
+
+	if((sent = sendto(fd, data, n, 0, &addr, addrlen)) == -1)
+		eprintf("sendto:");
+	return sent;
 }
-UDPWRAPPER(udpsend, sendto, 67, )
-UDPWRAPPER(udprecv, recvfrom, 68, &)
+
+/* recvfrom UDP wrapper */
+static ssize_t
+udprecv(unsigned char ip[4], int fd, void *data, size_t n) {
+	struct sockaddr addr = iptoaddr(ip, 68);
+	socklen_t addrlen = sizeof addr;
+	ssize_t r;
+
+	if((r = recvfrom(fd, data, n, 0, &addr, &addrlen)) == -1)
+		eprintf("recvfrom:");
+	return r;
+}
 
 static void
 setip(unsigned char ip[4], unsigned char mask[4], unsigned char gateway[4])
