@@ -171,14 +171,14 @@ setip(unsigned char ip[4], unsigned char mask[4], unsigned char gateway[4])
 static void
 cat(int dfd, char *src)
 {
-	char buf[4096]; /* TODO: use BUFSIZ ? */
-	int n, sfd = open(src, O_RDONLY);
+	char buf[BUFSIZ];
+	int n, fd;
 
-	while((n = read(sfd, buf, sizeof buf))>0)
+	if((fd = open(src, O_RDONLY)) == -1)
+		return; /* can't read, but don't error out */
+	while((n = read(fd, buf, sizeof buf)) > 0)
 		write(dfd, buf, n);
-	close(sfd);
-
-}
+	close(fd);
 }
 
 static void
