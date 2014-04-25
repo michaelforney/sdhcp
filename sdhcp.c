@@ -207,8 +207,7 @@ optget(Bootp *bp, void *data, int opt, int n)
 {
 	unsigned char *p = bp->optdata;
 	unsigned char *top = ((unsigned char *)bp) + sizeof *bp;
-	int code;
-	int len;
+	int code, len;
 
 	while(p < top) {
 		code = *p++;
@@ -321,7 +320,7 @@ run(void)
 #if 0
 InitReboot:
 	/* send DHCPrequest to old server */
-	dhcpsend(DHCPrequest, Broadcasr);
+	dhcpsend(DHCPrequest, Broadcast);
 	goto Rebooting;
 Rebooting:
 	switch (dhcprecv()) {
@@ -375,7 +374,7 @@ Bound:
 	case DHCPoffer:
 	case DHCPack:
 	case DHCPnak:
-		goto Bound; /* discard offer, ack, or nak */
+		goto Bound; /* discard offer, ACK or NAK */
 	case Timeout:
 		dhcpsend(DHCPrequest, Unicast);
 		goto Renewing;
@@ -386,16 +385,14 @@ Renewing:
 		acceptlease();
 		goto Bound;
 	case DHCPnak:
-		/* halt network; */
 		goto Init;
-	case Timeout: /* t2 expires: */
+	case Timeout:
 		dhcpsend(DHCPrequest, Broadcast);
 		goto Rebinding;
 	}
 Rebinding:
 	switch(dhcprecv()) {
 	case DHCPnak: /* lease expired */
-		/* halt network; */
 		goto Init;
 	case DHCPack:
 		acceptlease();
