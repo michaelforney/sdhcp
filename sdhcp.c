@@ -192,8 +192,10 @@ setdns(unsigned char dns[4])
 	char buf[128];
 	int fd;
 
-	if((fd = creat("/etc/resolv.conf", 0644)) == -1)
+	if((fd = creat("/etc/resolv.conf", 0644)) == -1) {
 		weprintf("can't change /etc/resolv.conf:");
+		return;
+	}
 	cat(fd, "/etc/resolv.conf.head");
 	if(snprintf(buf, sizeof(buf) - 1, "\nnameserver %d.%d.%d.%d\n",
 	         dns[0], dns[1], dns[2], dns[3]) > 0)
