@@ -3,9 +3,10 @@ include config.mk
 .POSIX:
 .SUFFIXES: .c .o
 
-HDR = util.h
+HDR = util.h arg.h
 LIB = \
-	  util/strlcpy.o
+	util/strlcpy.o \
+	util/eprintf.o
 
 SRC = sdhcp.c
 

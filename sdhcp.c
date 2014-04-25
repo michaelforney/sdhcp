@@ -194,8 +194,10 @@ static void
 setdns(unsigned char dns[4])
 {
 	char buf[128], *bp = buf;
-	int fd = creat("/etc/resolv.conf", 0644);
+	int fd;
 
+	if((fd = creat("/etca/resolv.conf", 0644)) == -1)
+		weprintf("can't change /etc/resolv.conf:");
 	cat(fd, "/etc/resolv.conf.head");
 	memcpy(buf, "\nnameserver ", 12), bp+=11;
 	*(bp = itoa(bp+1, dns[0])) = '.';
@@ -441,20 +443,22 @@ main(int argc, char *argv[])
 	signal(SIGTERM, cleanexit);
 
 	if((sock = socket(AF_INET, SOCK_DGRAM, 0)) == -1)
-		die("socket");
+		eprintf("socket:");
 	if(setsockopt(sock, SOL_SOCKET, SO_BROADCAST, &bcast, sizeof bcast) == -1)
-		die("setsockopt");
+		eprintf("setsockopt:");
 
 	strlcpy(ifreq.ifr_name, ifname, IF_NAMESIZE);
 	ioctl(sock, SIOCGIFINDEX, &ifreq);
 	if(setsockopt(sock, SOL_SOCKET, SO_BINDTODEVICE, &ifreq, sizeof ifreq) == -1)
-		die("setsockopt");
-	addr = iptoaddr(IP(255,255,255,255), 68);
-	if(bind(sock, (void*)&addr, sizeof addr)!=0)
-		die("bind");
+		eprintf("setsockopt:");
+	addr = iptoaddr(IP(255, 255, 255, 255), 68);
+	if(bind(sock, (void*)&addr, sizeof addr) != 0)
+		eprintf("bind:");
 	ioctl(sock, SIOCGIFHWADDR, &ifreq);
 	memcpy(hwaddr, ifreq.ifr_hwaddr.sa_data, sizeof ifreq.ifr_hwaddr.sa_data);
-	rnd = open("/dev/urandom", O_RDONLY);
+
+	if((rnd = open("/dev/urandom", O_RDONLY) == -1))
+		eprintf("can't open /dev/urandom to generate unique transaction identifier:");
 	read(rnd, xid, sizeof xid);
 	close(rnd);
 
