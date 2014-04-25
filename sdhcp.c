@@ -286,7 +286,11 @@ static int
 dhcprecv(void)
 {
 	unsigned char type;
-	struct pollfd pfd = {sock, POLLIN};
+	struct pollfd pfd;
+
+	memset(&pfd, 0, sizeof(pfd));
+	pfd.fd = sock;
+	pfd.events = POLLIN;
 
 	memset(&bp, 0, sizeof bp);
 	if(poll(&pfd, 1, -1) == -1) {
