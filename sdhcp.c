@@ -107,24 +107,25 @@ hnput(unsigned char *dst, unsigned long long src, size_t n)
 		dst[i] = (src >> (n * 8)) & 0xff;
 }
 
-static struct sockaddr
-iptoaddr(unsigned char ip[4], int port)
+static struct sockaddr *
+iptoaddr(struct sockaddr *ifaddr, unsigned char ip[4], int port)
 {
-	struct sockaddr_in ifaddr;
+	struct sockaddr_in *in = (struct sockaddr_in *)ifaddr;
 
-	ifaddr.sin_family = AF_INET;
-	ifaddr.sin_port = htons(port);
-	memcpy(&ifaddr.sin_addr, ip, sizeof ifaddr.sin_addr);
-	return *(struct sockaddr*)&ifaddr;
+	in->sin_family = AF_INET;
+	in->sin_port = htons(port);
+	memcpy(&(in->sin_addr), ip, sizeof in->sin_addr);
+	return ifaddr;
 }
 
 /* sendto UDP wrapper */
 static ssize_t
 udpsend(unsigned char ip[4], int fd, void *data, size_t n) {
-	struct sockaddr addr = iptoaddr(ip, 67);
+	struct sockaddr addr;
 	socklen_t addrlen = sizeof addr;
 	ssize_t sent;
 
+	iptoaddr(&addr, ip, 67); /* bootp server */
 	if((sent = sendto(fd, data, n, 0, &addr, addrlen)) == -1)
 		eprintf("sendto:");
 	return sent;
@@ -133,10 +134,11 @@ udpsend(unsigned char ip[4], int fd, void *data, size_t n) {
 /* recvfrom UDP wrapper */
 static ssize_t
 udprecv(unsigned char ip[4], int fd, void *data, size_t n) {
-	struct sockaddr addr = iptoaddr(ip, 68);
+	struct sockaddr addr;
 	socklen_t addrlen = sizeof addr;
 	ssize_t r;
 
+	iptoaddr(&addr, ip, 68); /* bootp client */
 	if((r = recvfrom(fd, data, n, 0, &addr, &addrlen)) == -1)
 		eprintf("recvfrom:");
 	return r;
@@ -153,19 +155,19 @@ setip(unsigned char ip[4], unsigned char mask[4], unsigned char gateway[4])
 	memset(&rtreq, 0, sizeof(rtreq));
 
 	strlcpy(ifreq.ifr_name, ifname, IF_NAMESIZE);
-	ifreq.ifr_addr = iptoaddr(ip, 0);
+	iptoaddr(&(ifreq.ifr_addr), ip, 0);
 	if((fd = socket(PF_INET, SOCK_DGRAM, IPPROTO_IP)) == -1)
 		eprintf("can't set ip, socket:");
 	ioctl(fd, SIOCSIFADDR, &ifreq);
-	ifreq.ifr_netmask = iptoaddr(mask, 0);
+	iptoaddr(&(ifreq.ifr_netmask), mask, 0);
 	ioctl(fd, SIOCSIFNETMASK, &ifreq);
 	ifreq.ifr_flags = IFF_UP | IFF_RUNNING | IFF_BROADCAST | IFF_MULTICAST;
 	ioctl(fd, SIOCSIFFLAGS, &ifreq);
 	/* gw */
 	rtreq.rt_flags = (RTF_UP | RTF_GATEWAY);
-	rtreq.rt_gateway = iptoaddr(gateway, 0);
-	rtreq.rt_genmask = iptoaddr(IP(0, 0, 0, 0), 0);
-	rtreq.rt_dst = iptoaddr(IP(0, 0, 0, 0), 0);
+	iptoaddr(&(rtreq.rt_gateway), gateway, 0);
+	iptoaddr(&(rtreq.rt_genmask), IP(0, 0, 0, 0), 0);
+	iptoaddr(&(rtreq.rt_dst), IP(0, 0, 0, 0), 0);
 	ioctl(fd, SIOCADDRT, &rtreq);
 
 	close(fd);
@@ -455,7 +457,7 @@ main(int argc, char *argv[])
 	ioctl(sock, SIOCGIFINDEX, &ifreq);
 	if(setsockopt(sock, SOL_SOCKET, SO_BINDTODEVICE, &ifreq, sizeof ifreq) == -1)
 		eprintf("setsockopt:");
-	addr = iptoaddr(IP(255, 255, 255, 255), 68);
+	iptoaddr(&addr, IP(255, 255, 255, 255), 68);
 	if(bind(sock, (void*)&addr, sizeof addr) != 0)
 		eprintf("bind:");
 	ioctl(sock, SIOCGIFHWADDR, &ifreq);
