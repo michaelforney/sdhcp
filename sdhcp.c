@@ -103,11 +103,11 @@ die(char *str)
 }
 
 static void
-hnput(unsigned char *dst, unsigned long long src, int n)
+hnput(unsigned char *dst, unsigned long long src, size_t n)
 {
-	int i;
+	unsigned int i;
 
-	for(i = 0; n--; i++) /* TODO: --n ? */
+	for(i = 0; n--; i++)
 		dst[i] = (src >> (n * 8)) & 0xff;
 }
 
