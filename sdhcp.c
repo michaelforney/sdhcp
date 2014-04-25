@@ -85,6 +85,7 @@ static unsigned char hwaddr[16];
 static time_t starttime;
 static char *ifname = "eth0";
 static char *cid = "";
+static char *program = "";
 static int sock;
 /* sav */
 static unsigned char server[4];
@@ -95,6 +96,7 @@ static unsigned char dns[4];
 static unsigned long t1;
 
 static int dflag = 0; /* set DNS: change /etc/resolv.conf ? */
+static int iflag = 0;
 
 #define IP(a,b,c,d) (unsigned char[4]){a,b,c,d}
 
@@ -312,9 +314,22 @@ dhcprecv(void)
 static void
 acceptlease(void)
 {
-	setip(client, mask, router);
+	char buf[128];
+	if(iflag)
+		setip(client, mask, router);
 	if(dflag == 1)
 		setdns(dns);
+	if(*program) {
+		snprintf(buf, sizeof(buf), "%d.%d.%d.%d", client[0], client[1], client[2], client[3]);
+		setenv("CLIENT", buf, 1);
+		snprintf(buf, sizeof(buf), "%d.%d.%d.%d", mask[0], mask[1], mask[2], mask[3]);
+		setenv("MASK", buf, 1);
+		snprintf(buf, sizeof(buf), "%d.%d.%d.%d", router[0], router[1], router[2], router[3]);
+		setenv("ROUTER", buf, 1);
+		snprintf(buf, sizeof(buf), "%d.%d.%d.%d", dns[0], dns[1], dns[2], dns[3]);
+		setenv("DNS", buf, 1);
+		system(program);
+	}
 	alarm(t1);
 }
 
@@ -414,7 +429,7 @@ static void cleanexit(int unused) {
 
 static void
 usage(void) {
-	eprintf("usage: sdhcp [ifname] | [[-i] <ifname>] [-d] [-c <clientid>]\n");
+	eprintf("usage: sdhcp [-i] [-d] [-e program] [ifname] [clientid]\n");
 }
 
 int
@@ -426,11 +441,11 @@ main(int argc, char *argv[])
 	int rnd;
 
 	ARGBEGIN {
-	case 'c': /* client-id */
-		cid = EARGF(usage());
+	case 'e': /* run program */
+		program = EARGF(usage());
 		break;
-	case 'i': /* interface */
-		ifname = EARGF(usage());
+	case 'i': /* set ip */
+		iflag = 1;
 		break;
 	case 'd': /* DNS: update /etc/resolv.conf */
 		dflag = 1;
@@ -441,9 +456,9 @@ main(int argc, char *argv[])
 	} ARGEND;
 
 	if(argc >= 1)
-		ifname = argv[0];
+		ifname = argv[0]; /* interface name */
 	if(argc >= 2)
-		cid = argv[1];
+		cid = argv[1]; /* client-id */
 
 	memset(&ifreq, 0, sizeof(ifreq));
 	signal(SIGALRM, nop);
