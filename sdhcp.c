@@ -304,7 +304,8 @@ static void
 acceptlease(void)
 {
 	setip(client, mask, router);
-	setdns(dns);
+	if(dflag == 1)
+		setdns(dns);
 	alarm(t1);
 }
 
@@ -406,7 +407,7 @@ static void cleanexit(int unused) {
 
 static void
 usage(void) {
-	eprintf("usage: sdhcp [ifname] | [[-i] <ifname>] [-r] [-c <clientid>]\n");
+	eprintf("usage: sdhcp [ifname] | [[-i] <ifname>] [-d] [-c <clientid>]\n");
 }
 
 int
@@ -419,7 +420,7 @@ main(int argc, char *argv[])
 
 	ARGBEGIN {
 	case 'c': /* client-id */
-		strlcpy(cid, EARGF(usage()), sizeof(cid));
+		cid = EARGF(usage());
 		break;
 	case 'i': /* interface */
 		ifname = EARGF(usage());
@@ -432,10 +433,10 @@ main(int argc, char *argv[])
 		break;
 	} ARGEND;
 
-	if(argc == 2)
-		usage();
-	else if(argc == 1)
+	if(argc >= 1)
 		ifname = argv[0];
+	if(argc >= 2)
+		cid = argv[1];
 
 	memset(&ifreq, 0, sizeof(ifreq));
 	signal(SIGALRM, nop);
