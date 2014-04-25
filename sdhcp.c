@@ -141,7 +141,7 @@ setip(unsigned char ip[4], unsigned char mask[4], unsigned char gateway[4])
 	struct rtentry rtreq = {0,};
 
 	fd = socket(PF_INET, SOCK_DGRAM, IPPROTO_IP);
-	strcpy(ifreq.ifr_name, ifname); /*TODO: strlcpy */
+	strlcpy(ifreq.ifr_name, ifname, IF_NAMESIZE);
 	ifreq.ifr_addr = iptoaddr(ip, 0);
 	ioctl(fd, SIOCSIFADDR , &ifreq);
 	ifreq.ifr_netmask = iptoaddr(mask, 0);
@@ -445,7 +445,7 @@ main(int argc, char *argv[])
 	if(setsockopt(sock, SOL_SOCKET, SO_BROADCAST, &bcast, sizeof bcast) == -1)
 		die("setsockopt");
 
-	strcpy(ifreq.ifr_name, ifname); /* TODO: strlcpy */
+	strlcpy(ifreq.ifr_name, ifname, IF_NAMESIZE);
 	ioctl(sock, SIOCGIFINDEX, &ifreq);
 	if(setsockopt(sock, SOL_SOCKET, SO_BINDTODEVICE, &ifreq, sizeof ifreq) == -1)
 		die("setsockopt");
