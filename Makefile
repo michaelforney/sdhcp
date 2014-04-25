@@ -1,9 +1,11 @@
 DESTDIR=
-sdhcp: sdhcp.c debug.c
 MANDIR = /usr/share/man
 
+sdhcp: sdhcp.c
+	$(CC) -O2 -o $@ sdhcp.c -static -Wall -ansi
+
 debug: sdhcp.c debug.c
-	$(CC) -DDEBUG -o sdhcp sdhcp.c -static
+	$(CC) -DDEBUG -o sdhcp sdhcp.c -static -O0 -g -Wall -ansi
 
 all: sdhcp
 
