@@ -397,13 +397,13 @@ static void nop(int unused){ }
 static void cleanexit(int unused){ 
 	dhcpsend(DHCPrelease, Unicast);
 	exit(0);
+	fputs("usage: sdhcp [interface]\n", stderr);
 }
 
 int
 main(int argc, char *argv[])
 {
 	if(argc>2){
-		write(2, "usage: sdhcp [inferface]\n",25);
 		exit(EXIT_FAILURE);
 	}if(argc==2)
 		ifname = argv[1];
