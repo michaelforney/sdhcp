@@ -84,7 +84,7 @@ static unsigned char xid[sizeof bp.xid];
 static unsigned char hwaddr[16];
 static time_t starttime;
 static char *ifname = "eth0";
-static char *cid = "vaio.12340"; /* TODO sane default value */
+static char *cid = ""; /* TODO sane default value */
 static int sock;
 /* sav */
 static unsigned char server[4];
