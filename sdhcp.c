@@ -96,7 +96,7 @@ static unsigned long t1;
 
 static int dflag = 0;
 
-#define IP(...) (unsigned char[4]){__VA_ARGS__}
+#define IP(a,b,c,d) (unsigned char[4]){a,b,c,d}
 
 static void
 hnput(unsigned char *dst, unsigned long long src, size_t n)
