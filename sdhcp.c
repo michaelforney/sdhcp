@@ -84,7 +84,7 @@ static unsigned char xid[sizeof bp.xid];
 static unsigned char hwaddr[16];
 static time_t starttime;
 static char *ifname = "eth0";
-static char *cid = ""; /* TODO sane default value */
+static char *cid = "";
 static int sock;
 /* sav */
 static unsigned char server[4];
@@ -94,7 +94,7 @@ static unsigned char router[4];
 static unsigned char dns[4];
 static unsigned long t1;
 
-static int dflag = 0;
+static int dflag = 0; /* set DNS: change /etc/resolv.conf ? */
 
 #define IP(a,b,c,d) (unsigned char[4]){a,b,c,d}
 
@@ -120,7 +120,8 @@ iptoaddr(struct sockaddr *ifaddr, unsigned char ip[4], int port)
 
 /* sendto UDP wrapper */
 static ssize_t
-udpsend(unsigned char ip[4], int fd, void *data, size_t n) {
+udpsend(unsigned char ip[4], int fd, void *data, size_t n)
+{
 	struct sockaddr addr;
 	socklen_t addrlen = sizeof addr;
 	ssize_t sent;
@@ -133,7 +134,8 @@ udpsend(unsigned char ip[4], int fd, void *data, size_t n) {
 
 /* recvfrom UDP wrapper */
 static ssize_t
-udprecv(unsigned char ip[4], int fd, void *data, size_t n) {
+udprecv(unsigned char ip[4], int fd, void *data, size_t n)
+{
 	struct sockaddr addr;
 	socklen_t addrlen = sizeof addr;
 	ssize_t r;
