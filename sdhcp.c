@@ -95,12 +95,6 @@ static unsigned long t1;
 
 #define IP(...) (unsigned char[4]){__VA_ARGS__}
 
-static void
-die(char *str)
-{
-	perror(str);
-	exit(EXIT_FAILURE);
-}
 
 static void
 hnput(unsigned char *dst, unsigned long long src, size_t n)
@@ -149,24 +143,25 @@ udprecv(unsigned char ip[4], int fd, void *data, size_t n) {
 static void
 setip(unsigned char ip[4], unsigned char mask[4], unsigned char gateway[4])
 {
-	int fd, x;
-	struct ifreq ifreq = {0,};
-	struct rtentry rtreq = {0,};
+	struct ifreq ifreq = { 0, };
+	struct rtentry rtreq = { 0, };
+	int fd;
 
-	fd = socket(PF_INET, SOCK_DGRAM, IPPROTO_IP);
 	strlcpy(ifreq.ifr_name, ifname, IF_NAMESIZE);
 	ifreq.ifr_addr = iptoaddr(ip, 0);
-	ioctl(fd, SIOCSIFADDR , &ifreq);
+	if((fd = socket(PF_INET, SOCK_DGRAM, IPPROTO_IP)) == -1)
+		eprintf("can't set ip, socket:");
+	ioctl(fd, SIOCSIFADDR, &ifreq);
 	ifreq.ifr_netmask = iptoaddr(mask, 0);
-	ioctl(fd, SIOCSIFNETMASK , &ifreq);
-	ifreq.ifr_flags = IFF_UP|IFF_RUNNING|IFF_BROADCAST|IFF_MULTICAST;
-	ioctl(fd, SIOCSIFFLAGS , &ifreq);
-
+	ioctl(fd, SIOCSIFNETMASK, &ifreq);
+	ifreq.ifr_flags = IFF_UP | IFF_RUNNING | IFF_BROADCAST | IFF_MULTICAST;
+	ioctl(fd, SIOCSIFFLAGS, &ifreq);
+	/* gw */
 	rtreq.rt_flags = (RTF_UP | RTF_GATEWAY);
 	rtreq.rt_gateway = iptoaddr(gateway, 0);
-	rtreq.rt_genmask = iptoaddr(IP(0,0,0,0), 0);
-	rtreq.rt_dst = iptoaddr(IP(0,0,0,0), 0);
-	ioctl(fd, SIOCADDRT , &rtreq);
+	rtreq.rt_genmask = iptoaddr(IP(0, 0, 0, 0), 0);
+	rtreq.rt_dst = iptoaddr(IP(0, 0, 0, 0), 0);
+	ioctl(fd, SIOCADDRT, &rtreq);
 
 	close(fd);
 }
@@ -182,43 +177,20 @@ cat(int dfd, char *src)
 	close(sfd);
 
 }
-
-/* use itoa not sprintf to make dietlibc happy. */
-/* TODO: use snprintf(), fuck dietlibc */
-char *
-itoa(char * str, int x)
-{
-	int k = 1;
-	char *ep = str;
-
-	if(x == 0) {
-		*str='0';
-		return str+1;
-	}
-	while(x / k > 0)
-		k *= 10;
-	while((k /= 10) >= 1)
-		*ep++ = '0' + ((x / k) % 10);
-	*ep = '\0';
-	return str + strlen(str);
 }
 
 static void
 setdns(unsigned char dns[4])
 {
-	char buf[128], *bp = buf;
+	char buf[128];
 	int fd;
 
-	if((fd = creat("/etca/resolv.conf", 0644)) == -1)
+	if((fd = creat("/etc/resolv.conf", 0644)) == -1)
 		weprintf("can't change /etc/resolv.conf:");
 	cat(fd, "/etc/resolv.conf.head");
-	memcpy(buf, "\nnameserver ", 12), bp+=11;
-	*(bp = itoa(bp+1, dns[0])) = '.';
-	*(bp = itoa(bp+1, dns[1])) = '.';
-	*(bp = itoa(bp+1, dns[2])) = '.';
-	*(bp = itoa(bp+1, dns[3])) = '\n';
-	*++bp = '\0';
-	write(fd, buf, strlen(buf));
+	if(snprintf(buf, sizeof(buf) - 1, "\nnameserver %d.%d.%d.%d\n",
+	         dns[0], dns[1], dns[2], dns[3]) > 0)
+		write(fd, buf, strlen(buf));
 	cat(fd, "/etc/resolv.conf.tail");
 	close(fd);
 }
@@ -238,18 +210,18 @@ optget(Bootp *bp, void *data, int opt, int n)
 		if(code == OBend || p == top)
 			break;
 		len = *p++;
-		if(len > top-p)
+		if(len > top - p)
 			break;
 		if(code == opt) {
 			memcpy(data, p, MIN(len, n));
-			return p;
+			return;
 		}
 		p += len;
 	}
 }
 
 static unsigned char *
-optput(unsigned char *p, int opt, unsigned char *data, int len)
+optput(unsigned char *p, int opt, unsigned char *data, size_t len)
 {
 	*p++ = opt;
 	*p++ = (unsigned char)len;
@@ -258,19 +230,18 @@ optput(unsigned char *p, int opt, unsigned char *data, int len)
 }
 
 static unsigned char *
-hnoptput(unsigned char *p, int opt, long long data, int len)
+hnoptput(unsigned char *p, int opt, long long data, size_t len)
 {
 	*p++ = opt;
 	*p++ = (unsigned char)len;
 	hnput(p, data, len);
-	return p+len;
+	return p + len;
 }
 
 static void
 dhcpsend(int type, int how)
 {
-	unsigned char *ip;
-	unsigned char *p;
+	unsigned char *ip, *p;
 
 	memset(&bp, 0, sizeof bp);
 	hnput(bp.op, Bootrequest, 1);
@@ -278,7 +249,7 @@ dhcpsend(int type, int how)
 	hnput(bp.hlen, 6, 1);
 	memcpy(bp.xid, xid, sizeof xid);
 	hnput(bp.flags, Fbroadcast, sizeof bp.flags);
-	hnput(bp.secs, time(NULL)-starttime, sizeof bp.secs);
+	hnput(bp.secs, time(NULL) - starttime, sizeof bp.secs);
 	memcpy(bp.magic, magic, sizeof bp.magic);
 	memcpy(bp.chaddr, hwaddr, sizeof bp.chaddr);
 	p = bp.optdata;
@@ -301,10 +272,8 @@ dhcpsend(int type, int how)
 		break;
 	}
 	*p++ = OBend;
-	/* debug */
-	/*bpdump((void*)&bp, p - (unsigned char *)&bp);*/
 
-	ip = (how == Broadcast) ? IP(255,255,255,255) : server;
+	ip = (how == Broadcast) ? IP(255, 255, 255, 255) : server;
 	udpsend(ip, sock, &bp, p - (unsigned char *)&bp);
 }
 
@@ -312,19 +281,16 @@ static int
 dhcprecv(void)
 {
 	unsigned char type;
-	int x;
+	struct pollfd pfd = {sock, POLLIN};
 
 	memset(&bp, 0, sizeof bp);
-	struct pollfd pfd = {sock, POLLIN}; /* TODO: not inline */
 	if(poll(&pfd, 1, -1) == -1) {
 		if(errno != EINTR)
-			die("poll");
-		else 
+			eprintf("poll:");
+		else
 			return Timeout;
 	}
-	x = udprecv(IP(255,255,255,255), sock, &bp, sizeof bp);
-	/* debug */
-	/* bpdump((void*)&bp, x);*/
+	udprecv(IP(255, 255, 255, 255), sock, &bp, sizeof bp);
 	optget(&bp, &type, ODtype, sizeof type);
 	return type;
 }
@@ -435,8 +401,7 @@ static void cleanexit(int unused) {
 
 static void
 usage(void) {
-	fputs("usage: sdhcp [interface]\n", stderr);
-	exit(EXIT_FAILURE);
+	eprintf("usage: sdhcp [ifname] | [[-i] <ifname>] [-r] [-c <clientid>]\n");
 }
 
 int
