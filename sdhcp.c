@@ -145,9 +145,12 @@ udprecv(unsigned char ip[4], int fd, void *data, size_t n) {
 static void
 setip(unsigned char ip[4], unsigned char mask[4], unsigned char gateway[4])
 {
-	struct ifreq ifreq = { 0, };
-	struct rtentry rtreq = { 0, };
+	struct ifreq ifreq;
+	struct rtentry rtreq;
 	int fd;
+
+	memset(&ifreq, 0, sizeof(ifreq));
+	memset(&rtreq, 0, sizeof(rtreq));
 
 	strlcpy(ifreq.ifr_name, ifname, IF_NAMESIZE);
 	ifreq.ifr_addr = iptoaddr(ip, 0);
@@ -256,7 +259,7 @@ dhcpsend(int type, int how)
 	memcpy(bp.chaddr, hwaddr, sizeof bp.chaddr);
 	p = bp.optdata;
 	p = hnoptput(p, ODtype, type, 1);
-	p = optput(p, ODclientid, cid, strlen(cid));
+	p = optput(p, ODclientid, (unsigned char*)cid, strlen(cid));
 
 	switch(type) {
 	case DHCPdiscover:
@@ -410,7 +413,7 @@ int
 main(int argc, char *argv[])
 {
 	int bcast = 1;
-	struct ifreq ifreq = {0,};
+	struct ifreq ifreq;
 	struct sockaddr addr;
 	int rnd;
 
@@ -434,6 +437,7 @@ main(int argc, char *argv[])
 	else if(argc == 1)
 		ifname = argv[0];
 
+	memset(&ifreq, 0, sizeof(ifreq));
 	signal(SIGALRM, nop);
 	signal(SIGTERM, cleanexit);
 
