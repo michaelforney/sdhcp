@@ -14,6 +14,7 @@
 #include <unistd.h>
 
 #include "util.h"
+#include "arg.h"
 
 typedef struct bootp {
 	unsigned char op      [1];
@@ -83,7 +84,7 @@ static unsigned char xid[sizeof bp.xid];
 static unsigned char hwaddr[16];
 static time_t starttime;
 static char *ifname = "eth0";
-static char *cid = "vaio.12340";
+static char *cid = "vaio.12340"; /* TODO sane default value */
 static int sock;
 /* sav */
 static unsigned char server[4];
@@ -93,8 +94,9 @@ static unsigned char router[4];
 static unsigned char dns[4];
 static unsigned long t1;
 
-#define IP(...) (unsigned char[4]){__VA_ARGS__}
+static int dflag = 0;
 
+#define IP(...) (unsigned char[4]){__VA_ARGS__}
 
 static void
 hnput(unsigned char *dst, unsigned long long src, size_t n)
@@ -412,10 +414,25 @@ main(int argc, char *argv[])
 	struct sockaddr addr;
 	int rnd;
 
-	if(argc > 2)
+	ARGBEGIN {
+	case 'c': /* client-id */
+		strlcpy(cid, EARGF(usage()), sizeof(cid));
+		break;
+	case 'i': /* interface */
+		ifname = EARGF(usage());
+		break;
+	case 'd': /* DNS: update /etc/resolv.conf */
+		dflag = 1;
+		break;
+	default:
 		usage();
-	else if(argc == 2)
-		ifname = argv[1];
+		break;
+	} ARGEND;
+
+	if(argc == 2)
+		usage();
+	else if(argc == 1)
+		ifname = argv[0];
 
 	signal(SIGALRM, nop);
 	signal(SIGTERM, cleanexit);
