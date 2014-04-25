@@ -197,7 +197,7 @@ setdns(unsigned char dns[4])
 	close(fd);
 }
 
-static unsigned char *
+static void
 optget(Bootp *bp, void *data, int opt, int n)
 {
 	unsigned char *p = bp->optdata;
