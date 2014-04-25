@@ -13,8 +13,7 @@
 #include <time.h>
 #include <unistd.h>
 
-#define MIN(a,b) (((a)<(b))?(a):(b))
-
+#include "util.h"
 
 typedef struct bootp {
 	unsigned char op      [1];
