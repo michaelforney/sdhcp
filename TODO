@@ -1,10 +1,9 @@
 TODO:
 	[ ] manual check memcpy bounds.
-	[ ] add flag (-e?) to call a script with vars set (setenv()), not call setip().
 	[ ] add flag (-s?) to probe a specific DHCP server, not broadcast?
 	    probably skip in run() Init: etc stages.
 	[ ] sane default value for client-id and test it.
-	[ ] add new options to man page (-d, -i, -c).
+	[ ] add new options to man page (-d, -i).
 	[ ] update LICENSE.
 	[ ] replace unsigned char ip[4] and so on from function declarations.
 	[?] ipv6 support ?
@@ -18,7 +17,7 @@ Changed (for now):
 		  -D_BSD_SOURCE added and explicitly added missing headers (time.h and unistd.h).
 		- moved man page from sdhcp.8 to sdhcp.1
 	- typos:
-		- sdhcp.c: inferface typo.
+		- sdhcp.c: interface typo.
 		- sdhcp.1: shdcp typo.
 	- make exit([01]), EXIT_SUCCESS or EXIT_FAILURE.
 	- replace write() for stdout messages with fprintf()
@@ -28,8 +27,14 @@ Changed (for now):
 		- make sure on install /sbin and mandir exists.
 		- add config.mk, and follow suckless Makefile style.
 	- add arg.h
-		- first parameter remaings interface.
-		- add -d flag, update /etc/resolv.conf (default changed to no).
-		- add -c flag, set client id, used to be hardcoded to "vaio".
-		  this can also be specified as a second parameter.
-		- add -i flag, set interface name.
+		- first parameter remains interface.
+		- second parameter is optional client-id, used to be hardcoded to
+		  "vaio".
+		- add -d flag, don't update /etc/resolv.conf.
+		- add -i flag, don't set ip.
+		- add -e flag, run program, this has the following variables set:
+		  $SERVER, DHCP ip.
+		  $DNS, DNS ip.
+		  $ROUTER, router ip.
+		  $MASK, network mask.
+		  $CLIENT, client ip.
