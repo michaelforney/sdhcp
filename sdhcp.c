@@ -423,9 +423,11 @@ Rebinding:
 }
 
 static void nop(int unused) {
+	(void) unused;
 }
 
 static void cleanexit(int unused) {
+	(void) unused;
 	dhcpsend(DHCPrelease, Unicast);
 	exit(EXIT_SUCCESS);
 }
