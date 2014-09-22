@@ -7,6 +7,7 @@ TODO:
 	[ ] update LICENSE.
 	[ ] replace unsigned char ip[4] and so on from function declarations.
 	[?] ipv6 support ?
+	[ ] allow sdhcp to run in the foreground (-f?)
 
 Changed (for now):
 	- cleanup
