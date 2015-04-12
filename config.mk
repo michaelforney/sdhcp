@@ -5,7 +5,7 @@ PREFIX    = /usr/local
 DESTDIR   =
 MANPREFIX = $(PREFIX)/share/man
 
-#CC       = gcc
+CC        = cc
 #CC       = musl-gcc
 LD        = $(CC)
 CPPFLAGS  = -D_BSD_SOURCE
