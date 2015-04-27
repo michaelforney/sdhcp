@@ -97,6 +97,7 @@ static unsigned long t1;
 
 static int dflag = 1; /* change DNS in /etc/resolv.conf ? */
 static int iflag = 1; /* set IP ? */
+static int fflag = 0; /* run in foreground */
 
 #define IP(a,b,c,d) (unsigned char[4]){a,b,c,d}
 
@@ -392,7 +393,7 @@ Requesting:
 	}
 Bound:
 	fputs("Congrats! You should be on the 'net.\n", stdout);
-	if(!forked) {
+	if(!fflag && !forked) {
 		if(fork())
 			exit(EXIT_SUCCESS);
 		forked = 1;
@@ -439,7 +440,7 @@ static void cleanexit(int unused) {
 
 static void
 usage(void) {
-	eprintf("usage: sdhcp [-i] [-d] [-e program] [ifname] [clientid]\n");
+	eprintf("usage: sdhcp [-i] [-d] [-f] [-e program] [ifname] [clientid]\n");
 }
 
 int
@@ -459,6 +460,9 @@ main(int argc, char *argv[])
 		break;
 	case 'd': /* don't update DNS in/etc/resolv.conf */
 		dflag = 0;
+		break;
+	case 'f': /* run in foreground */
+		fflag = 1;
 		break;
 	default:
 		usage();
