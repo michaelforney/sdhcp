@@ -108,7 +108,7 @@ hnput(unsigned char *dst, unsigned long long src, size_t n)
 {
 	unsigned int i;
 
-	for(i = 0; n--; i++)
+	for (i = 0; n--; i++)
 		dst[i] = (src >> (n * 8)) & 0xff;
 }
 
@@ -120,6 +120,7 @@ iptoaddr(struct sockaddr *ifaddr, unsigned char ip[4], int port)
 	in->sin_family = AF_INET;
 	in->sin_port = htons(port);
 	memcpy(&(in->sin_addr), ip, sizeof in->sin_addr);
+
 	return ifaddr;
 }
 
@@ -132,8 +133,9 @@ udpsend(unsigned char ip[4], int fd, void *data, size_t n)
 	ssize_t sent;
 
 	iptoaddr(&addr, ip, 67); /* bootp server */
-	if((sent = sendto(fd, data, n, 0, &addr, addrlen)) == -1)
+	if ((sent = sendto(fd, data, n, 0, &addr, addrlen)) == -1)
 		eprintf("sendto:");
+
 	return sent;
 }
 
@@ -146,8 +148,9 @@ udprecv(unsigned char ip[4], int fd, void *data, size_t n)
 	ssize_t r;
 
 	iptoaddr(&addr, ip, 68); /* bootp client */
-	if((r = recvfrom(fd, data, n, 0, &addr, &addrlen)) == -1)
+	if ((r = recvfrom(fd, data, n, 0, &addr, &addrlen)) == -1)
 		eprintf("recvfrom:");
+
 	return r;
 }
 
@@ -163,7 +166,7 @@ setip(unsigned char ip[4], unsigned char mask[4], unsigned char gateway[4])
 
 	strlcpy(ifreq.ifr_name, ifname, IF_NAMESIZE);
 	iptoaddr(&(ifreq.ifr_addr), ip, 0);
-	if((fd = socket(PF_INET, SOCK_DGRAM, IPPROTO_IP)) == -1)
+	if ((fd = socket(PF_INET, SOCK_DGRAM, IPPROTO_IP)) == -1)
 		eprintf("can't set ip, socket:");
 	ioctl(fd, SIOCSIFADDR, &ifreq);
 	iptoaddr(&(ifreq.ifr_netmask), mask, 0);
@@ -186,9 +189,9 @@ cat(int dfd, char *src)
 	char buf[BUFSIZ];
 	int n, fd;
 
-	if((fd = open(src, O_RDONLY)) == -1)
+	if ((fd = open(src, O_RDONLY)) == -1)
 		return; /* can't read, but don't error out */
-	while((n = read(fd, buf, sizeof buf)) > 0)
+	while ((n = read(fd, buf, sizeof buf)) > 0)
 		write(dfd, buf, n);
 	close(fd);
 }
@@ -199,12 +202,12 @@ setdns(unsigned char dns[4])
 	char buf[128];
 	int fd;
 
-	if((fd = creat("/etc/resolv.conf", 0644)) == -1) {
+	if ((fd = creat("/etc/resolv.conf", 0644)) == -1) {
 		weprintf("can't change /etc/resolv.conf:");
 		return;
 	}
 	cat(fd, "/etc/resolv.conf.head");
-	if(snprintf(buf, sizeof(buf) - 1, "\nnameserver %d.%d.%d.%d\n",
+	if (snprintf(buf, sizeof(buf) - 1, "\nnameserver %d.%d.%d.%d\n",
 	         dns[0], dns[1], dns[2], dns[3]) > 0)
 		write(fd, buf, strlen(buf));
 	cat(fd, "/etc/resolv.conf.tail");
@@ -218,18 +221,18 @@ optget(Bootp *bp, void *data, int opt, int n)
 	unsigned char *top = ((unsigned char *)bp) + sizeof *bp;
 	int code, len;
 
-	while(p < top) {
+	while (p < top) {
 		code = *p++;
-		if(code == OBpad)
+		if (code == OBpad)
 			continue;
-		if(code == OBend || p == top)
+		if (code == OBend || p == top)
 			break;
 		len = *p++;
-		if(len > top - p)
+		if (len > top - p)
 			break;
-		if(code == opt) {
+		if (code == opt) {
 			memcpy(data, p, MIN(len, n));
-			return;
+			break;
 		}
 		p += len;
 	}
@@ -241,6 +244,7 @@ optput(unsigned char *p, int opt, unsigned char *data, size_t len)
 	*p++ = opt;
 	*p++ = (unsigned char)len;
 	memcpy(p, data, len);
+
 	return p + len;
 }
 
@@ -250,6 +254,7 @@ hnoptput(unsigned char *p, int opt, long long data, size_t len)
 	*p++ = opt;
 	*p++ = (unsigned char)len;
 	hnput(p, data, len);
+
 	return p + len;
 }
 
@@ -303,14 +308,15 @@ dhcprecv(void)
 	pfd.events = POLLIN;
 
 	memset(&bp, 0, sizeof bp);
-	if(poll(&pfd, 1, -1) == -1) {
-		if(errno != EINTR)
+	if (poll(&pfd, 1, -1) == -1) {
+		if (errno != EINTR)
 			eprintf("poll:");
 		else
 			return Timeout;
 	}
 	udprecv(IP(255, 255, 255, 255), sock, &bp, sizeof bp);
 	optget(&bp, &type, ODtype, sizeof type);
+
 	return type;
 }
 
@@ -319,11 +325,11 @@ acceptlease(void)
 {
 	char buf[128];
 
-	if(iflag == 1)
+	if (iflag)
 		setip(client, mask, router);
-	if(dflag == 1)
+	if (dflag)
 		setdns(dns);
-	if(*program) {
+	if (*program) {
 		snprintf(buf, sizeof(buf), "%d.%d.%d.%d", server[0], server[1], server[2], server[3]);
 		setenv("SERVER", buf, 1);
 		snprintf(buf, sizeof(buf), "%d.%d.%d.%d", client[0], client[1], client[2], client[3]);
@@ -344,20 +350,6 @@ run(void)
 {
 	int forked = 0;
 
-#if 0
-InitReboot:
-	/* send DHCPrequest to old server */
-	dhcpsend(DHCPrequest, Broadcast);
-	goto Rebooting;
-Rebooting:
-	switch (dhcprecv()) {
-	case DHCPnak:
-		goto Init;
-	case DHCPack:
-		acceptoffer();
-		goto Bound;
-	}
-#endif
 Init:
 	dhcpsend(DHCPdiscover, Broadcast);
 	alarm(1);
@@ -384,20 +376,15 @@ Requesting:
 	switch(dhcprecv()) {
 	case DHCPoffer:
 		goto Requesting; /* ignore other offers. */
-#if 0
-	case DHCPack: /* (and you don't want it) ? */
-		dhcpsend(DHCPdecline, Unicast);
-		goto Init;
-#endif
 	case DHCPack:
 		acceptlease();
 		goto Bound;
 	}
 Bound:
 	fputs("Congrats! You should be on the 'net.\n", stdout);
-	if(!fflag && !forked) {
-		if(fork())
-			exit(EXIT_SUCCESS);
+	if (!fflag && !forked) {
+		if (fork())
+			exit(0);
 		forked = 1;
 	}
 	switch (dhcprecv()) {
@@ -441,13 +428,13 @@ void cleanexit(int unused)
 {
 	(void) unused;
 	dhcpsend(DHCPrelease, Unicast);
-	exit(EXIT_SUCCESS);
+	exit(0);
 }
 
 static void
 usage(void)
 {
-	eprintf("usage: sdhcp [-d] [-e program] [-f] [-i] [ifname] [clientid]\n");
+	eprintf("usage: %s [-d] [-e program] [-f] [-i] [ifname] [clientid]\n", argv0);
 }
 
 int
@@ -476,36 +463,37 @@ main(int argc, char *argv[])
 		break;
 	} ARGEND;
 
-	if(argc >= 1)
+	if (argc)
 		ifname = argv[0]; /* interface name */
-	if(argc >= 2)
+	if (argc >= 2)
 		cid = argv[1]; /* client-id */
 
 	memset(&ifreq, 0, sizeof(ifreq));
 	signal(SIGALRM, nop);
 	signal(SIGTERM, cleanexit);
 
-	if((sock = socket(AF_INET, SOCK_DGRAM, 0)) == -1)
+	if ((sock = socket(AF_INET, SOCK_DGRAM, 0)) == -1)
 		eprintf("socket:");
-	if(setsockopt(sock, SOL_SOCKET, SO_BROADCAST, &bcast, sizeof bcast) == -1)
+	if (setsockopt(sock, SOL_SOCKET, SO_BROADCAST, &bcast, sizeof bcast) == -1)
 		eprintf("setsockopt:");
 
 	strlcpy(ifreq.ifr_name, ifname, IF_NAMESIZE);
 	ioctl(sock, SIOCGIFINDEX, &ifreq);
-	if(setsockopt(sock, SOL_SOCKET, SO_BINDTODEVICE, &ifreq, sizeof ifreq) == -1)
+	if (setsockopt(sock, SOL_SOCKET, SO_BINDTODEVICE, &ifreq, sizeof ifreq) == -1)
 		eprintf("setsockopt:");
 	iptoaddr(&addr, IP(255, 255, 255, 255), 68);
-	if(bind(sock, (void*)&addr, sizeof addr) != 0)
+	if (bind(sock, (void*)&addr, sizeof addr) != 0)
 		eprintf("bind:");
 	ioctl(sock, SIOCGIFHWADDR, &ifreq);
 	memcpy(hwaddr, ifreq.ifr_hwaddr.sa_data, sizeof ifreq.ifr_hwaddr.sa_data);
 
-	if((rnd = open("/dev/urandom", O_RDONLY)) == -1)
+	if ((rnd = open("/dev/urandom", O_RDONLY)) == -1)
 		eprintf("can't open /dev/urandom to generate unique transaction identifier:");
 	read(rnd, xid, sizeof xid);
 	close(rnd);
 
 	starttime = time(NULL);
 	run();
-	return EXIT_SUCCESS;
+
+	return 0;
 }

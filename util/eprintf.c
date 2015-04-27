@@ -16,7 +16,7 @@ eprintf(const char *fmt, ...)
 	va_list ap;
 
 	va_start(ap, fmt);
-	venprintf(EXIT_FAILURE, fmt, ap);
+	venprintf(1, fmt, ap);
 	va_end(ap);
 }
 
@@ -33,13 +33,12 @@ enprintf(int status, const char *fmt, ...)
 void
 venprintf(int status, const char *fmt, va_list ap)
 {
-#ifdef DEBUG
-	fprintf(stderr, "%s: ", argv0);
-#endif
+	if (strncmp(fmt, "usage", strlen("usage")))
+		fprintf(stderr, "%s: ", argv0);
 
 	vfprintf(stderr, fmt, ap);
 
-	if(fmt[0] && fmt[strlen(fmt)-1] == ':') {
+	if (fmt[0] && fmt[strlen(fmt)-1] == ':') {
 		fputc(' ', stderr);
 		perror(NULL);
 	}
@@ -52,9 +51,8 @@ weprintf(const char *fmt, ...)
 {
 	va_list ap;
 
-#ifdef DEBUG
-	fprintf(stderr, "%s: ", argv0);
-#endif
+	if (strncmp(fmt, "usage", strlen("usage")))
+		fprintf(stderr, "%s: ", argv0);
 
 	va_start(ap, fmt);
 	vfprintf(stderr, fmt, ap);
