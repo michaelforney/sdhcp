@@ -1,20 +1,22 @@
-#include <sys/socket.h>
 #include <sys/ioctl.h>
+#include <sys/socket.h>
+
 #include <netinet/in.h>
 #include <net/if.h>
 #include <net/route.h>
-#include <signal.h>
-#include <poll.h>
+
 #include <errno.h>
 #include <fcntl.h>
+#include <poll.h>
+#include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
 #include <unistd.h>
 
-#include "util.h"
 #include "arg.h"
+#include "util.h"
 
 typedef struct bootp {
 	unsigned char op      [1];
@@ -428,19 +430,24 @@ Rebinding:
 	}
 }
 
-static void nop(int unused) {
+static
+void nop(int unused)
+{
 	(void) unused;
 }
 
-static void cleanexit(int unused) {
+static
+void cleanexit(int unused)
+{
 	(void) unused;
 	dhcpsend(DHCPrelease, Unicast);
 	exit(EXIT_SUCCESS);
 }
 
 static void
-usage(void) {
-	eprintf("usage: sdhcp [-i] [-d] [-f] [-e program] [ifname] [clientid]\n");
+usage(void)
+{
+	eprintf("usage: sdhcp [-d] [-e program] [-f] [-i] [ifname] [clientid]\n");
 }
 
 int
@@ -452,17 +459,17 @@ main(int argc, char *argv[])
 	int rnd;
 
 	ARGBEGIN {
+	case 'd': /* don't update DNS in /etc/resolv.conf */
+		dflag = 0;
+		break;
 	case 'e': /* run program */
 		program = EARGF(usage());
 		break;
-	case 'i': /* don't set ip */
-		iflag = 0;
-		break;
-	case 'd': /* don't update DNS in/etc/resolv.conf */
-		dflag = 0;
-		break;
 	case 'f': /* run in foreground */
 		fflag = 1;
+		break;
+	case 'i': /* don't set ip */
+		iflag = 0;
 		break;
 	default:
 		usage();
