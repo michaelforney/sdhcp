@@ -1,13 +1,12 @@
 TODO:
-	[ ] manual check memcpy bounds.
-	[ ] add flag (-s?) to probe a specific DHCP server, not broadcast?
-	    probably skip in run() Init: etc stages.
-	[ ] sane default value for client-id and test it.
-	[ ] add new options to man page (-d, -i).
-	[ ] update LICENSE.
-	[ ] replace unsigned char ip[4] and so on from function declarations.
-	[?] ipv6 support ?
-	[ ] allow sdhcp to run in the foreground (-f?)
+[ ] manual check memcpy bounds.
+[ ] add flag (-s?) to probe a specific DHCP server, not broadcast?
+    probably skip in run() Init: etc stages.
+[ ] sane default value for client-id and test it.
+[ ] add new options to man page (-d, -i).
+[ ] update LICENSE.
+[ ] replace unsigned char ip[4] and so on from function declarations.
+[?] ipv6 support ?
 
 Changed (for now):
 	- cleanup
@@ -17,6 +16,7 @@ Changed (for now):
 		- code compiles more cleanly (ansi and c99),
 		  -D_BSD_SOURCE added and explicitly added missing headers (time.h and unistd.h).
 		- moved man page from sdhcp.8 to sdhcp.1
+		- changed man page to mandoc.
 	- typos:
 		- sdhcp.c: interface typo.
 		- sdhcp.1: shdcp typo.
