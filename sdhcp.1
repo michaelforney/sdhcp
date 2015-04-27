@@ -1,52 +1,51 @@
-.TH SDHCP-VERSION 1
-.SH NAME
-sdhcp \- a simple dhcp client
-.SH SYNOPSIS
-.B sdhcp
-.RB [ \-d ]
-.RB [ \-i ]
-.RB "[ \-e"
-.IR "program"
-.RB "]"
-.RB "[ "
-.IR interface
-.RB "]"
-.RB "["
-.IR "client\-id"
-.RB "]"
-.SH DESCRIPTION
-sdhcp is a simple, tiny dhcp client. It runs until it enters the "Bound"
+.Dd April 27, 2015
+.Dt SDHCP 1
+.Os
+.Sh NAME
+.Nm sdhcp
+.Nd a simple DHCP client
+.Sh SYNOPSIS
+.Nm
+.Op Fl d
+.Op Fl e Ar program
+.Op Fl f
+.Op Fl i
+.Op Ar interface
+.Op Ar client-id
+.Sh DESCRIPTION
+.Nm
+is a simple, tiny DHCP client. It runs until it enters the "Bound"
 state, then forks to the background and runs as a daemon to keep
 the lease alive.
-.SH OPTIONS
-.TP
-.B \-d
-don't change DNS in /etc/resolv.conf.
-.TP
-.B \-i
-don't change interface information such as an IP address.
-.TP
-.B "\-e program"
-run program. Variables will be set, see VARIABLES.
-.TP
-.B \-f
+.Sh OPTIONS
+.Bl -tag -width Ds
+.It Fl d
+don't change DNS in
+.Pa /etc/resolv.conf .
+.It Fl e Ar program
+run
+.Ar program .
+Variables will be set, see VARIABLES.
+.It Fl f
 run in foreground.
-.SH VARIABLES
-.LP
+.It Fl i
+don't change interface information such as an IP address.
+.El
+.Sh VARIABLES
 The following variables are set:
-.LP
-SERVER    DHCP IP.
-.LP
-DNS       DNS IP.
-.LP
-ROUTER    router IP.
-.LP
-MASK      network mask.
-.LP
-CLIENT    your client IP.
-.SH BUGS
-I'm sure there's plenty. It only currently supports a small subset of
+.Bl -tag -width Ds
+.It Ev SERVER
+DHCP IP.
+.It Ev DNS
+DNS IP.
+.It Ev ROUTER
+router IP.
+.It Ev MASK
+network mask.
+.It Ev CLIENT
+your client IP.
+.El
+.Sh BUGS
+I'm sure there are plenty. It only currently supports a small subset of
 DHCP options, and has been untested on larger networks. It ignores most of
-the DHCP options it understands. Send bug reports to me!
-.SH AUTHOR
-see LICENSE file
+the DHCP options it understands.
