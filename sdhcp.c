@@ -339,6 +339,8 @@ acceptlease(void)
 static void
 run(void)
 {
+	int forked = 0;
+
 #if 0
 InitReboot:
 	/* send DHCPrequest to old server */
@@ -390,8 +392,11 @@ Requesting:
 	}
 Bound:
 	fputs("Congrats! You should be on the 'net.\n", stdout);
-	if(fork())
-		exit(EXIT_SUCCESS);
+	if(!forked) {
+		if(fork())
+			exit(EXIT_SUCCESS);
+		forked = 1;
+	}
 	switch (dhcprecv()) {
 	case DHCPoffer:
 	case DHCPack:
