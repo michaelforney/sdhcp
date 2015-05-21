@@ -9,4 +9,4 @@ CC        = cc
 LD        = $(CC)
 CPPFLAGS  = -D_BSD_SOURCE
 CFLAGS    = -Wall -Wextra -pedantic -std=c99 $(CPPFLAGS)
-LDFLAGS   =
+LDFLAGS   = -s
