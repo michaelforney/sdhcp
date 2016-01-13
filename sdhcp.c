@@ -86,7 +86,8 @@ static unsigned char xid[sizeof bp.xid];
 static unsigned char hwaddr[16];
 static time_t starttime;
 static char *ifname = "eth0";
-static char *cid = "";
+static unsigned char cid[16];
+static size_t cidlen;
 static char *program = "";
 static int sock;
 /* sav */
@@ -274,7 +275,7 @@ dhcpsend(int type, int how)
 	memcpy(bp.chaddr, hwaddr, sizeof bp.chaddr);
 	p = bp.optdata;
 	p = hnoptput(p, ODtype, type, 1);
-	p = optput(p, ODclientid, (unsigned char*)cid, strlen(cid));
+	p = optput(p, ODclientid, cid, cidlen);
 
 	switch(type) {
 	case DHCPdiscover:
@@ -465,8 +466,12 @@ main(int argc, char *argv[])
 
 	if (argc)
 		ifname = argv[0]; /* interface name */
-	if (argc >= 2)
-		cid = argv[1]; /* client-id */
+	if (argc >= 2) {
+		cidlen = strlen(argv[1]);
+		if (cidlen > sizeof(cid))
+			cidlen = sizeof(cid);
+		strlcpy(cid, argv[1], cidlen); /* client-id */
+	}
 
 	memset(&ifreq, 0, sizeof(ifreq));
 	signal(SIGALRM, nop);
@@ -486,6 +491,8 @@ main(int argc, char *argv[])
 		eprintf("bind:");
 	ioctl(sock, SIOCGIFHWADDR, &ifreq);
 	memcpy(hwaddr, ifreq.ifr_hwaddr.sa_data, sizeof ifreq.ifr_hwaddr.sa_data);
+	if (!cidlen)
+		memcpy(cid, hwaddr, cidlen = sizeof(hwaddr));
 
 	if ((rnd = open("/dev/urandom", O_RDONLY)) == -1)
 		eprintf("can't open /dev/urandom to generate unique transaction identifier:");
