@@ -428,7 +428,7 @@ void cleanexit(int unused)
 {
 	(void) unused;
 	dhcpsend(DHCPrelease, Unicast);
-	exit(0);
+	_exit(0);
 }
 
 static void
