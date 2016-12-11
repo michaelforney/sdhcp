@@ -467,7 +467,7 @@ main(int argc, char *argv[])
 	if (argc)
 		ifname = argv[0]; /* interface name */
 	if (argc >= 2)
-		strlcpy(cid, argv[1], sizeof(cid)); /* client-id */
+		strlcpy((char *)cid, argv[1], sizeof(cid)); /* client-id */
 
 	memset(&ifreq, 0, sizeof(ifreq));
 	signal(SIGALRM, nop);
