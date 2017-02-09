@@ -9,6 +9,7 @@
 #include <fcntl.h>
 #include <poll.h>
 #include <signal.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -95,7 +96,7 @@ static unsigned char client[4];
 static unsigned char mask[4];
 static unsigned char router[4];
 static unsigned char dns[4];
-static unsigned long t1;
+static uint32_t t1;
 
 static int dflag = 1; /* change DNS in /etc/resolv.conf ? */
 static int iflag = 1; /* set IP ? */
@@ -104,7 +105,7 @@ static int fflag = 0; /* run in foreground */
 #define IP(a,b,c,d) (unsigned char[4]){a,b,c,d}
 
 static void
-hnput(unsigned char *dst, unsigned long long src, size_t n)
+hnput(unsigned char *dst, uint32_t src, size_t n)
 {
 	unsigned int i;
 
@@ -249,7 +250,7 @@ optput(unsigned char *p, int opt, unsigned char *data, size_t len)
 }
 
 static unsigned char *
-hnoptput(unsigned char *p, int opt, long long data, size_t len)
+hnoptput(unsigned char *p, int opt, uint32_t data, size_t len)
 {
 	*p++ = opt;
 	*p++ = (unsigned char)len;
