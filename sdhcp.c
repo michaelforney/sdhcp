@@ -1,5 +1,6 @@
 #include <sys/ioctl.h>
 #include <sys/socket.h>
+#include <sys/timerfd.h>
 
 #include <netinet/in.h>
 #include <net/if.h>
@@ -47,7 +48,9 @@ enum {
 	DHCPnak,
 	DHCPrelease,
 	DHCPinform,
-	Timeout =          200,
+	Timeout0 =         200,
+	Timeout1,
+	Timeout2,
 
 	Bootrequest =        1,
 	Bootreply =          2,
@@ -89,14 +92,14 @@ static time_t starttime;
 static char *ifname = "eth0";
 static unsigned char cid[16];
 static char *program = "";
-static int sock;
+static int sock, timers[3];
 /* sav */
 static unsigned char server[4];
 static unsigned char client[4];
 static unsigned char mask[4];
 static unsigned char router[4];
 static unsigned char dns[4];
-static uint32_t t1;
+static uint32_t renewaltime, rebindingtime, lease;
 
 static int dflag = 1; /* change DNS in /etc/resolv.conf ? */
 static int iflag = 1; /* set IP ? */
@@ -282,7 +285,7 @@ dhcpsend(int type, int how)
 		break;
 	case DHCPrequest:
 		/* memcpy(bp.ciaddr, client, sizeof bp.ciaddr); */
-		p = hnoptput(p, ODlease, t1, sizeof(t1));
+		p = hnoptput(p, ODlease, lease, sizeof(lease));
 		p = optput(p, ODipaddr, client, sizeof(client));
 		p = optput(p, ODserverid, server, sizeof(server));
 		break;
@@ -302,22 +305,34 @@ static int
 dhcprecv(void)
 {
 	unsigned char type;
-	struct pollfd pfd;
+	struct pollfd pfd[] = {
+		{ .fd = sock, .events = POLLIN },
+		{ .fd = timers[0], .events = POLLIN },
+		{ .fd = timers[1], .events = POLLIN },
+		{ .fd = timers[2], .events = POLLIN },
+	};
+	uint64_t n;
 
-	memset(&pfd, 0, sizeof(pfd));
-	pfd.fd = sock;
-	pfd.events = POLLIN;
-
-	memset(&bp, 0, sizeof(bp));
-	if (poll(&pfd, 1, -1) == -1) {
-		if (errno != EINTR)
-			eprintf("poll:");
-		else
-			return Timeout;
+	if (poll(pfd, LEN(pfd), -1) == -1)
+		eprintf("poll:");
+	if (pfd[0].revents) {
+		memset(&bp, 0, sizeof(bp));
+		udprecv(IP(255, 255, 255, 255), sock, &bp, sizeof(bp));
+		optget(&bp, &type, ODtype, sizeof(type));
+		return type;
 	}
-	udprecv(IP(255, 255, 255, 255), sock, &bp, sizeof(bp));
-	optget(&bp, &type, ODtype, sizeof(type));
-
+	if (pfd[1].revents) {
+		type = Timeout0;
+		read(timers[0], &n, sizeof(n));
+	}
+	if (pfd[2].revents) {
+		type = Timeout1;
+		read(timers[1], &n, sizeof(n));
+	}
+	if (pfd[3].revents) {
+		type = Timeout2;
+		read(timers[2], &n, sizeof(n));
+	}
 	return type;
 }
 
@@ -343,32 +358,62 @@ acceptlease(void)
 		setenv("DNS", buf, 1);
 		system(program);
 	}
-	alarm(t1);
+}
+
+static void
+settimeout(int n, const struct itimerspec *ts)
+{
+	if (timerfd_settime(timers[n], 0, ts, NULL) < 0)
+		eprintf("timerfd_settime:");
+}
+
+/* sets ts to expire halfway to the expiration of timer n, minimum of 60 seconds */
+static void
+calctimeout(int n, struct itimerspec *ts)
+{
+	if (timerfd_gettime(timers[n], ts) < 0)
+		eprintf("timerfd_gettime:");
+	ts->it_value.tv_nsec /= 2;
+	if (ts->it_value.tv_sec % 2)
+		ts->it_value.tv_nsec += 500000000;
+	ts->it_value.tv_sec /= 2;
+	if (ts->it_value.tv_sec < 60) {
+		ts->it_value.tv_sec = 60;
+		ts->it_value.tv_nsec = 0;
+	}
 }
 
 static void
 run(void)
 {
 	int forked = 0;
+	struct itimerspec timeout = { 0 };
 
 Init:
 	dhcpsend(DHCPdiscover, Broadcast);
-	alarm(1);
+	timeout.it_value.tv_sec = 1;
+	timeout.it_value.tv_nsec = 0;
+	settimeout(0, &timeout);
 	goto Selecting;
 Selecting:
 	for (;;) {
 		switch (dhcprecv()) {
 		case DHCPoffer:
-			alarm(0);
+			timeout.it_value.tv_sec = 0;
+			settimeout(0, &timeout);
 			memcpy(client, bp.yiaddr, sizeof(client));
 			optget(&bp, server, ODserverid, sizeof(server));
 			optget(&bp, mask, OBmask, sizeof(mask));
 			optget(&bp, router, OBrouter, sizeof(router));
 			optget(&bp, dns, OBdnsserver, sizeof(dns));
-			optget(&bp, &t1, ODlease, sizeof(t1));
-			t1 = ntohl(t1);
+			optget(&bp, &renewaltime, ODrenewaltime, sizeof(renewaltime));
+			optget(&bp, &rebindingtime, ODrebindingtime, sizeof(rebindingtime));
+			optget(&bp, &lease, ODlease, sizeof(lease));
+			renewaltime = ntohl(renewaltime);
+			rebindingtime = ntohl(rebindingtime);
+			lease = ntohl(lease);
 			goto Requesting;
-		case Timeout:
+		case Timeout0:
 			goto Init;
 		}
 	}
@@ -390,40 +435,54 @@ Bound:
 			exit(0);
 		forked = 1;
 	}
+	timeout.it_value.tv_sec = renewaltime;
+	settimeout(0, &timeout);
+	timeout.it_value.tv_sec = rebindingtime;
+	settimeout(1, &timeout);
+	timeout.it_value.tv_sec = lease;;
+	settimeout(2, &timeout);
 	for (;;) {
 		switch (dhcprecv()) {
-		case Timeout:
+		case Timeout0: /* t1 elapsed */
 			goto Renewing;
+		case Timeout1: /* t2 elapsed */
+			goto Rebinding;
+		case Timeout2: /* lease expired */
+			goto Init;
 		}
 	}
 Renewing:
 	dhcpsend(DHCPrequest, Unicast);
+	calctimeout(1, &timeout);
+	settimeout(0, &timeout);
 	for (;;) {
 		switch (dhcprecv()) {
 		case DHCPack:
 			goto Bound;
+		case Timeout0: /* resend request */
+			goto Renewing;
+		case Timeout1: /* t2 elapsed */
+			goto Rebinding;
+		case Timeout2:
 		case DHCPnak:
 			goto Init;
-		case Timeout:
-			goto Rebinding;
 		}
 	}
 Rebinding:
+	calctimeout(2, &timeout);
+	settimeout(0, &timeout);
 	dhcpsend(DHCPrequest, Broadcast);
 	for (;;) {
 		switch (dhcprecv()) {
-		case DHCPnak: /* lease expired */
-			goto Init;
 		case DHCPack:
 			goto Bound;
+		case Timeout0: /* resend request */
+			goto Rebinding;
+		case Timeout2: /* lease expired */
+		case DHCPnak:
+			goto Init;
 		}
 	}
-}
-
-static void
-nop(int unused)
-{
-	(void)unused;
 }
 
 static void
@@ -447,6 +506,7 @@ main(int argc, char *argv[])
 	struct ifreq ifreq;
 	struct sockaddr addr;
 	int rnd;
+	size_t i;
 
 	ARGBEGIN {
 	case 'd': /* don't update DNS in /etc/resolv.conf */
@@ -472,7 +532,6 @@ main(int argc, char *argv[])
 		strlcpy((char *)cid, argv[1], sizeof(cid)); /* client-id */
 
 	memset(&ifreq, 0, sizeof(ifreq));
-	signal(SIGALRM, nop);
 	signal(SIGTERM, cleanexit);
 
 	if ((sock = socket(AF_INET, SOCK_DGRAM, 0)) == -1)
@@ -496,6 +555,12 @@ main(int argc, char *argv[])
 		eprintf("can't open /dev/urandom to generate unique transaction identifier:");
 	read(rnd, xid, sizeof(xid));
 	close(rnd);
+
+	for (i = 0; i < LEN(timers); ++i) {
+		timers[i] = timerfd_create(CLOCK_BOOTTIME, TFD_CLOEXEC);
+		if (timers[i] == -1)
+			eprintf("timerfd_create:");
+	}
 
 	starttime = time(NULL);
 	run();
