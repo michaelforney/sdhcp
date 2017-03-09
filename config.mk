@@ -7,6 +7,6 @@ MANPREFIX = $(PREFIX)/share/man
 
 CC        = cc
 LD        = $(CC)
-CPPFLAGS  = -D_BSD_SOURCE
+CPPFLAGS  = -D_DEFAULT_SOURCE
 CFLAGS    = -Wall -Wextra -pedantic -std=c99 $(CPPFLAGS)
 LDFLAGS   = -s
