@@ -367,21 +367,21 @@ Selecting:
 			optget(&bp, dns, OBdnsserver, sizeof(dns));
 			optget(&bp, &t1, ODlease, sizeof(t1));
 			t1 = ntohl(t1);
-			dhcpsend(DHCPrequest, Broadcast);
 			goto Requesting;
 		case Timeout:
 			goto Init;
 		}
 	}
 Requesting:
+	dhcpsend(DHCPrequest, Broadcast);
 	for (;;) {
 		switch (dhcprecv()) {
 		case DHCPack:
-			acceptlease();
 			goto Bound;
 		}
 	}
 Bound:
+	acceptlease();
 	fputs("Congrats! You should be on the 'net.\n", stdout);
 	if (!fflag && !forked) {
 		if (fork())
@@ -391,30 +391,28 @@ Bound:
 	for (;;) {
 		switch (dhcprecv()) {
 		case Timeout:
-			dhcpsend(DHCPrequest, Unicast);
 			goto Renewing;
 		}
 	}
 Renewing:
+	dhcpsend(DHCPrequest, Unicast);
 	for (;;) {
 		switch (dhcprecv()) {
 		case DHCPack:
-			acceptlease();
 			goto Bound;
 		case DHCPnak:
 			goto Init;
 		case Timeout:
-			dhcpsend(DHCPrequest, Broadcast);
 			goto Rebinding;
 		}
 	}
 Rebinding:
+	dhcpsend(DHCPrequest, Broadcast);
 	for (;;) {
 		switch (dhcprecv()) {
 		case DHCPnak: /* lease expired */
 			goto Init;
 		case DHCPack:
-			acceptlease();
 			goto Bound;
 		}
 	}
