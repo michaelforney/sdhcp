@@ -356,30 +356,30 @@ Init:
 	alarm(1);
 	goto Selecting;
 Selecting:
-	switch (dhcprecv()) {
-	case DHCPoffer:
-		alarm(0);
-		memcpy(client, bp.yiaddr, sizeof(client));
-		optget(&bp, server, ODserverid, sizeof(server));
-		optget(&bp, mask, OBmask, sizeof(mask));
-		optget(&bp, router, OBrouter, sizeof(router));
-		optget(&bp, dns, OBdnsserver, sizeof(dns));
-		optget(&bp, &t1, ODlease, sizeof(t1));
-		t1 = ntohl(t1);
-		dhcpsend(DHCPrequest, Broadcast);
-		goto Requesting;
-	case Timeout:
-		goto Init;
-	default:
-		goto Selecting;
+	for (;;) {
+		switch (dhcprecv()) {
+		case DHCPoffer:
+			alarm(0);
+			memcpy(client, bp.yiaddr, sizeof(client));
+			optget(&bp, server, ODserverid, sizeof(server));
+			optget(&bp, mask, OBmask, sizeof(mask));
+			optget(&bp, router, OBrouter, sizeof(router));
+			optget(&bp, dns, OBdnsserver, sizeof(dns));
+			optget(&bp, &t1, ODlease, sizeof(t1));
+			t1 = ntohl(t1);
+			dhcpsend(DHCPrequest, Broadcast);
+			goto Requesting;
+		case Timeout:
+			goto Init;
+		}
 	}
 Requesting:
-	switch (dhcprecv()) {
-	case DHCPoffer:
-		goto Requesting; /* ignore other offers. */
-	case DHCPack:
-		acceptlease();
-		goto Bound;
+	for (;;) {
+		switch (dhcprecv()) {
+		case DHCPack:
+			acceptlease();
+			goto Bound;
+		}
 	}
 Bound:
 	fputs("Congrats! You should be on the 'net.\n", stdout);
@@ -388,33 +388,35 @@ Bound:
 			exit(0);
 		forked = 1;
 	}
-	switch (dhcprecv()) {
-	case DHCPoffer:
-	case DHCPack:
-	case DHCPnak:
-		goto Bound; /* discard offer, ACK or NAK */
-	case Timeout:
-		dhcpsend(DHCPrequest, Unicast);
-		goto Renewing;
+	for (;;) {
+		switch (dhcprecv()) {
+		case Timeout:
+			dhcpsend(DHCPrequest, Unicast);
+			goto Renewing;
+		}
 	}
 Renewing:
-	switch (dhcprecv()) {
-	case DHCPack:
-		acceptlease();
-		goto Bound;
-	case DHCPnak:
-		goto Init;
-	case Timeout:
-		dhcpsend(DHCPrequest, Broadcast);
-		goto Rebinding;
+	for (;;) {
+		switch (dhcprecv()) {
+		case DHCPack:
+			acceptlease();
+			goto Bound;
+		case DHCPnak:
+			goto Init;
+		case Timeout:
+			dhcpsend(DHCPrequest, Broadcast);
+			goto Rebinding;
+		}
 	}
 Rebinding:
-	switch (dhcprecv()) {
-	case DHCPnak: /* lease expired */
-		goto Init;
-	case DHCPack:
-		acceptlease();
-		goto Bound;
+	for (;;) {
+		switch (dhcprecv()) {
+		case DHCPnak: /* lease expired */
+			goto Init;
+		case DHCPack:
+			acceptlease();
+			goto Bound;
+		}
 	}
 }
 
