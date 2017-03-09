@@ -77,10 +77,10 @@ enum {
 	OBend =            255,
 };
 
-enum { Broadcast, Unicast};
+enum { Broadcast, Unicast };
 
 Bootp bp;
-unsigned char magic[] = {99, 130, 83, 99};
+unsigned char magic[] = { 99, 130, 83, 99 };
 
 /* conf */
 static unsigned char xid[sizeof(bp.xid)];
@@ -102,7 +102,7 @@ static int dflag = 1; /* change DNS in /etc/resolv.conf ? */
 static int iflag = 1; /* set IP ? */
 static int fflag = 0; /* run in foreground */
 
-#define IP(a,b,c,d) (unsigned char[4]){a,b,c,d}
+#define IP(a, b, c, d) (unsigned char[4]){ a, b, c, d }
 
 static void
 hnput(unsigned char *dst, uint32_t src, size_t n)
@@ -418,16 +418,16 @@ Rebinding:
 	}
 }
 
-static
-void nop(int unused)
+static void
+nop(int unused)
 {
-	(void) unused;
+	(void)unused;
 }
 
-static
-void cleanexit(int unused)
+static void
+cleanexit(int unused)
 {
-	(void) unused;
+	(void)unused;
 	dhcpsend(DHCPrelease, Unicast);
 	_exit(0);
 }
