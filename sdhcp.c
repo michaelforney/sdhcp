@@ -277,7 +277,7 @@ dhcpsend(int type, int how)
 	p = hnoptput(p, ODtype, type, 1);
 	p = optput(p, ODclientid, cid, sizeof(cid));
 
-	switch(type) {
+	switch (type) {
 	case DHCPdiscover:
 		break;
 	case DHCPrequest:
@@ -356,7 +356,7 @@ Init:
 	alarm(1);
 	goto Selecting;
 Selecting:
-	switch(dhcprecv()) {
+	switch (dhcprecv()) {
 	case DHCPoffer:
 		alarm(0);
 		memcpy(client, bp.yiaddr, sizeof(client));
@@ -374,7 +374,7 @@ Selecting:
 		goto Selecting;
 	}
 Requesting:
-	switch(dhcprecv()) {
+	switch (dhcprecv()) {
 	case DHCPoffer:
 		goto Requesting; /* ignore other offers. */
 	case DHCPack:
@@ -398,7 +398,7 @@ Bound:
 		goto Renewing;
 	}
 Renewing:
-	switch(dhcprecv()) {
+	switch (dhcprecv()) {
 	case DHCPack:
 		acceptlease();
 		goto Bound;
@@ -409,7 +409,7 @@ Renewing:
 		goto Rebinding;
 	}
 Rebinding:
-	switch(dhcprecv()) {
+	switch (dhcprecv()) {
 	case DHCPnak: /* lease expired */
 		goto Init;
 	case DHCPack:
