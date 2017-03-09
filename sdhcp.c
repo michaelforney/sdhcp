@@ -378,6 +378,8 @@ Requesting:
 		switch (dhcprecv()) {
 		case DHCPack:
 			goto Bound;
+		case DHCPnak:
+			goto Init;
 		}
 	}
 Bound:
