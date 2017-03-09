@@ -83,7 +83,7 @@ Bootp bp;
 unsigned char magic[] = {99, 130, 83, 99};
 
 /* conf */
-static unsigned char xid[sizeof bp.xid];
+static unsigned char xid[sizeof(bp.xid)];
 static unsigned char hwaddr[16];
 static time_t starttime;
 static char *ifname = "eth0";
@@ -120,7 +120,7 @@ iptoaddr(struct sockaddr *ifaddr, unsigned char ip[4], int port)
 
 	in->sin_family = AF_INET;
 	in->sin_port = htons(port);
-	memcpy(&(in->sin_addr), ip, sizeof in->sin_addr);
+	memcpy(&(in->sin_addr), ip, sizeof(in->sin_addr));
 
 	return ifaddr;
 }
@@ -130,7 +130,7 @@ static ssize_t
 udpsend(unsigned char ip[4], int fd, void *data, size_t n)
 {
 	struct sockaddr addr;
-	socklen_t addrlen = sizeof addr;
+	socklen_t addrlen = sizeof(addr);
 	ssize_t sent;
 
 	iptoaddr(&addr, ip, 67); /* bootp server */
@@ -145,7 +145,7 @@ static ssize_t
 udprecv(unsigned char ip[4], int fd, void *data, size_t n)
 {
 	struct sockaddr addr;
-	socklen_t addrlen = sizeof addr;
+	socklen_t addrlen = sizeof(addr);
 	ssize_t r;
 
 	iptoaddr(&addr, ip, 68); /* bootp client */
@@ -192,7 +192,7 @@ cat(int dfd, char *src)
 
 	if ((fd = open(src, O_RDONLY)) == -1)
 		return; /* can't read, but don't error out */
-	while ((n = read(fd, buf, sizeof buf)) > 0)
+	while ((n = read(fd, buf, sizeof(buf))) > 0)
 		write(dfd, buf, n);
 	close(fd);
 }
@@ -219,7 +219,7 @@ static void
 optget(Bootp *bp, void *data, int opt, int n)
 {
 	unsigned char *p = bp->optdata;
-	unsigned char *top = ((unsigned char *)bp) + sizeof *bp;
+	unsigned char *top = ((unsigned char *)bp) + sizeof(*bp);
 	int code, len;
 
 	while (p < top) {
@@ -264,15 +264,15 @@ dhcpsend(int type, int how)
 {
 	unsigned char *ip, *p;
 
-	memset(&bp, 0, sizeof bp);
+	memset(&bp, 0, sizeof(bp));
 	hnput(bp.op, Bootrequest, 1);
 	hnput(bp.htype, 1, 1);
 	hnput(bp.hlen, 6, 1);
-	memcpy(bp.xid, xid, sizeof xid);
-	hnput(bp.flags, Fbroadcast, sizeof bp.flags);
-	hnput(bp.secs, time(NULL) - starttime, sizeof bp.secs);
-	memcpy(bp.magic, magic, sizeof bp.magic);
-	memcpy(bp.chaddr, hwaddr, sizeof bp.chaddr);
+	memcpy(bp.xid, xid, sizeof(xid));
+	hnput(bp.flags, Fbroadcast, sizeof(bp.flags));
+	hnput(bp.secs, time(NULL) - starttime, sizeof(bp.secs));
+	memcpy(bp.magic, magic, sizeof(bp.magic));
+	memcpy(bp.chaddr, hwaddr, sizeof(bp.chaddr));
 	p = bp.optdata;
 	p = hnoptput(p, ODtype, type, 1);
 	p = optput(p, ODclientid, cid, sizeof(cid));
@@ -282,14 +282,14 @@ dhcpsend(int type, int how)
 		break;
 	case DHCPrequest:
 		/* memcpy(bp.ciaddr, client, sizeof bp.ciaddr); */
-		p = hnoptput(p, ODlease, t1, sizeof t1);
-		p = optput(p, ODipaddr, client, sizeof client);
-		p = optput(p, ODserverid, server, sizeof server);
+		p = hnoptput(p, ODlease, t1, sizeof(t1));
+		p = optput(p, ODipaddr, client, sizeof(client));
+		p = optput(p, ODserverid, server, sizeof(server));
 		break;
 	case DHCPrelease:
-		memcpy(bp.ciaddr, client, sizeof client);
-		p = optput(p, ODipaddr, client, sizeof client);
-		p = optput(p, ODserverid, server, sizeof server);
+		memcpy(bp.ciaddr, client, sizeof(client));
+		p = optput(p, ODipaddr, client, sizeof(client));
+		p = optput(p, ODserverid, server, sizeof(server));
 		break;
 	}
 	*p++ = OBend;
@@ -308,15 +308,15 @@ dhcprecv(void)
 	pfd.fd = sock;
 	pfd.events = POLLIN;
 
-	memset(&bp, 0, sizeof bp);
+	memset(&bp, 0, sizeof(bp));
 	if (poll(&pfd, 1, -1) == -1) {
 		if (errno != EINTR)
 			eprintf("poll:");
 		else
 			return Timeout;
 	}
-	udprecv(IP(255, 255, 255, 255), sock, &bp, sizeof bp);
-	optget(&bp, &type, ODtype, sizeof type);
+	udprecv(IP(255, 255, 255, 255), sock, &bp, sizeof(bp));
+	optget(&bp, &type, ODtype, sizeof(type));
 
 	return type;
 }
@@ -359,12 +359,12 @@ Selecting:
 	switch(dhcprecv()) {
 	case DHCPoffer:
 		alarm(0);
-		memcpy(client, bp.yiaddr, sizeof client);
-		optget(&bp, server, ODserverid, sizeof server);
-		optget(&bp, mask, OBmask, sizeof mask);
-		optget(&bp, router, OBrouter, sizeof router);
-		optget(&bp, dns, OBdnsserver, sizeof dns);
-		optget(&bp, &t1, ODlease, sizeof t1);
+		memcpy(client, bp.yiaddr, sizeof(client));
+		optget(&bp, server, ODserverid, sizeof(server));
+		optget(&bp, mask, OBmask, sizeof(mask));
+		optget(&bp, router, OBrouter, sizeof(router));
+		optget(&bp, dns, OBdnsserver, sizeof(dns));
+		optget(&bp, &t1, ODlease, sizeof(t1));
 		t1 = ntohl(t1);
 		dhcpsend(DHCPrequest, Broadcast);
 		goto Requesting;
@@ -475,24 +475,24 @@ main(int argc, char *argv[])
 
 	if ((sock = socket(AF_INET, SOCK_DGRAM, 0)) == -1)
 		eprintf("socket:");
-	if (setsockopt(sock, SOL_SOCKET, SO_BROADCAST, &bcast, sizeof bcast) == -1)
+	if (setsockopt(sock, SOL_SOCKET, SO_BROADCAST, &bcast, sizeof(bcast)) == -1)
 		eprintf("setsockopt:");
 
 	strlcpy(ifreq.ifr_name, ifname, IF_NAMESIZE);
 	ioctl(sock, SIOCGIFINDEX, &ifreq);
-	if (setsockopt(sock, SOL_SOCKET, SO_BINDTODEVICE, &ifreq, sizeof ifreq) == -1)
+	if (setsockopt(sock, SOL_SOCKET, SO_BINDTODEVICE, &ifreq, sizeof(ifreq)) == -1)
 		eprintf("setsockopt:");
 	iptoaddr(&addr, IP(255, 255, 255, 255), 68);
-	if (bind(sock, (void*)&addr, sizeof addr) != 0)
+	if (bind(sock, (void*)&addr, sizeof(addr)) != 0)
 		eprintf("bind:");
 	ioctl(sock, SIOCGIFHWADDR, &ifreq);
-	memcpy(hwaddr, ifreq.ifr_hwaddr.sa_data, sizeof ifreq.ifr_hwaddr.sa_data);
+	memcpy(hwaddr, ifreq.ifr_hwaddr.sa_data, sizeof(ifreq.ifr_hwaddr.sa_data));
 	if (!cid[0])
 		memcpy(cid, hwaddr, sizeof(cid));
 
 	if ((rnd = open("/dev/urandom", O_RDONLY)) == -1)
 		eprintf("can't open /dev/urandom to generate unique transaction identifier:");
-	read(rnd, xid, sizeof xid);
+	read(rnd, xid, sizeof(xid));
 	close(rnd);
 
 	starttime = time(NULL);
