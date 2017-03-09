@@ -386,7 +386,7 @@ calctimeout(int n, struct itimerspec *ts)
 static void
 run(void)
 {
-	int forked = 0;
+	int forked = 0, t;
 	struct itimerspec timeout = { 0 };
 
 Init:
@@ -399,8 +399,6 @@ Selecting:
 	for (;;) {
 		switch (dhcprecv()) {
 		case DHCPoffer:
-			timeout.it_value.tv_sec = 0;
-			settimeout(0, &timeout);
 			memcpy(client, bp.yiaddr, sizeof(client));
 			optget(&bp, server, ODserverid, sizeof(server));
 			optget(&bp, mask, OBmask, sizeof(mask));
@@ -418,15 +416,26 @@ Selecting:
 		}
 	}
 Requesting:
-	dhcpsend(DHCPrequest, Broadcast);
-	for (;;) {
-		switch (dhcprecv()) {
-		case DHCPack:
-			goto Bound;
-		case DHCPnak:
-			goto Init;
+	for (t = 4; t <= 64; t *= 2) {
+		dhcpsend(DHCPrequest, Broadcast);
+		timeout.it_value.tv_sec = t;
+		settimeout(0, &timeout);
+		for (;;) {
+			switch (dhcprecv()) {
+			case DHCPack:
+				goto Bound;
+			case DHCPnak:
+				goto Init;
+			case Timeout0:
+				break;
+			default:
+				continue;
+			}
+			break;
 		}
 	}
+	/* no response from DHCPREQUEST after several attempts, go to INIT */
+	goto Init;
 Bound:
 	acceptlease();
 	fputs("Congrats! You should be on the 'net.\n", stdout);
