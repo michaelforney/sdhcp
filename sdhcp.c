@@ -8,6 +8,7 @@
 
 #include <errno.h>
 #include <fcntl.h>
+#include <limits.h>
 #include <poll.h>
 #include <signal.h>
 #include <stdint.h>
@@ -62,6 +63,7 @@ enum {
 	OBrouter =           3,
 	OBnameserver =       5,
 	OBdnsserver =        6,
+	OBhostname =        12,
 	OBbaddr =           28,
 	ODipaddr =          50, /* 0x32 */
 	ODlease =           51,
@@ -88,6 +90,7 @@ unsigned char magic[] = { 99, 130, 83, 99 };
 /* conf */
 static unsigned char xid[sizeof(bp.xid)];
 static unsigned char hwaddr[16];
+static char hostname[HOST_NAME_MAX + 1];
 static time_t starttime;
 static char *ifname = "eth0";
 static unsigned char cid[16];
@@ -278,6 +281,7 @@ dhcpsend(int type, int how)
 	p = bp.optdata;
 	p = hnoptput(p, ODtype, type, 1);
 	p = optput(p, ODclientid, cid, sizeof(cid));
+	p = optput(p, OBhostname, (unsigned char *)hostname, strlen(hostname));
 
 	switch (type) {
 	case DHCPdiscover:
@@ -541,6 +545,9 @@ main(int argc, char *argv[])
 
 	memset(&ifreq, 0, sizeof(ifreq));
 	signal(SIGTERM, cleanexit);
+
+	if (gethostname(hostname, sizeof(hostname)) == -1)
+		eprintf("gethostname:");
 
 	if ((sock = socket(AF_INET, SOCK_DGRAM, 0)) == -1)
 		eprintf("socket:");
