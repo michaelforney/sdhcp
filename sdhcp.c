@@ -99,7 +99,6 @@ static unsigned char client[4];
 static unsigned char mask[4];
 static unsigned char router[4];
 static unsigned char dns[4];
-static uint32_t renewaltime, rebindingtime, lease;
 
 static int dflag = 1; /* change DNS in /etc/resolv.conf ? */
 static int iflag = 1; /* set IP ? */
@@ -285,7 +284,6 @@ dhcpsend(int type, int how)
 		break;
 	case DHCPrequest:
 		/* memcpy(bp.ciaddr, client, sizeof bp.ciaddr); */
-		p = hnoptput(p, ODlease, lease, sizeof(lease));
 		p = optput(p, ODipaddr, client, sizeof(client));
 		p = optput(p, ODserverid, server, sizeof(server));
 		break;
@@ -388,6 +386,7 @@ run(void)
 {
 	int forked = 0, t;
 	struct itimerspec timeout = { 0 };
+	uint32_t renewaltime, rebindingtime, lease;
 
 Init:
 	dhcpsend(DHCPdiscover, Broadcast);
@@ -401,15 +400,6 @@ Selecting:
 		case DHCPoffer:
 			memcpy(client, bp.yiaddr, sizeof(client));
 			optget(&bp, server, ODserverid, sizeof(server));
-			optget(&bp, mask, OBmask, sizeof(mask));
-			optget(&bp, router, OBrouter, sizeof(router));
-			optget(&bp, dns, OBdnsserver, sizeof(dns));
-			optget(&bp, &renewaltime, ODrenewaltime, sizeof(renewaltime));
-			optget(&bp, &rebindingtime, ODrebindingtime, sizeof(rebindingtime));
-			optget(&bp, &lease, ODlease, sizeof(lease));
-			renewaltime = ntohl(renewaltime);
-			rebindingtime = ntohl(rebindingtime);
-			lease = ntohl(lease);
 			goto Requesting;
 		case Timeout0:
 			goto Init;
@@ -437,6 +427,15 @@ Requesting:
 	/* no response from DHCPREQUEST after several attempts, go to INIT */
 	goto Init;
 Bound:
+	optget(&bp, mask, OBmask, sizeof(mask));
+	optget(&bp, router, OBrouter, sizeof(router));
+	optget(&bp, dns, OBdnsserver, sizeof(dns));
+	optget(&bp, &renewaltime, ODrenewaltime, sizeof(renewaltime));
+	optget(&bp, &rebindingtime, ODrebindingtime, sizeof(rebindingtime));
+	optget(&bp, &lease, ODlease, sizeof(lease));
+	renewaltime = ntohl(renewaltime);
+	rebindingtime = ntohl(rebindingtime);
+	lease = ntohl(lease);
 	acceptlease();
 	fputs("Congrats! You should be on the 'net.\n", stdout);
 	if (!fflag && !forked) {
